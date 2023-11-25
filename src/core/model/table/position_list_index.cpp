@@ -263,6 +263,39 @@ bool PositionListIndex::TakeProbe(int position, ColumnLayoutRelationData& relati
     return true;
 }
 
+double PositionListIndex::GetAverageProbability(const PositionListIndex& xa) const {
+    double sum = 0.0;
+    size_t cluster_rows_count = 0;
+    auto xa_index = xa.GetIndex();
+    auto xa_cluster_iterator = xa_index.begin();
+
+    for (auto& x_cluster : index_) {
+        auto x_row_iterator = x_cluster.begin();
+        std::size_t max = 1;
+        do {
+            if (xa_cluster_iterator != xa_index.end() &&
+                *x_row_iterator == xa_cluster_iterator->at(0)) {
+                auto cluster_size = xa_cluster_iterator->size();
+                if (cluster_size > max) max = cluster_size;
+                xa_cluster_iterator++;
+            }
+        } while (++x_row_iterator != x_cluster.end());
+        sum += static_cast<double>(max) / x_cluster.size();
+        cluster_rows_count += x_cluster.size();
+    }
+    unsigned int unique_rows = static_cast<unsigned int>(relation_size_ - cluster_rows_count);
+    return (sum + unique_rows) / (index_.size() + unique_rows);
+}
+
+double PositionListIndex::GetAverageProbability() const {
+    int max = 1;
+    for (auto& x_cluster : index_) {
+        int total = x_cluster.size();
+        if (total > max) max = total;
+    }
+    return static_cast<double>(max) / relation_size_;
+}
+
 std::string PositionListIndex::ToString() const {
     std::string res = "[";
     for (auto& cluster : index_) {

@@ -29,9 +29,9 @@ public:
 
     Tane();
 
-    static double CalculateZeroAryFdError(ColumnData const* rhs,
+    virtual double CalculateZeroAryFdError(ColumnData const* rhs,
                                           ColumnLayoutRelationData const* relation_data);
-    static double CalculateFdError(model::PositionListIndex const* lhs_pli,
+    virtual double CalculateFdError(model::PositionListIndex const* lhs_pli,
                                    model::PositionListIndex const* joint_pli,
                                    ColumnLayoutRelationData const* relation_data);
     static double CalculateUccError(model::PositionListIndex const* pli,
