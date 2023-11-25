@@ -18,10 +18,10 @@ namespace algos {
 
 double ProbaTane::CalculateZeroAryFdError(ColumnData const* rhs,
                                           ColumnLayoutRelationData const* /*relation_data*/) {
-    int max = 1;
+    size_t max = 1;
     auto const& x_index = rhs->GetPositionListIndex();
     for (auto& x_cluster : x_index->GetIndex()) {
-        int total = x_cluster.size();
+        size_t total = x_cluster.size();
         if (total > max) max = total;
     }
     return 1.0 - static_cast<double>(max) / x_index->getRelationSize();
