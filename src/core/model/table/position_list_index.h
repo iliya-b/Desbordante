@@ -133,9 +133,6 @@ public:
             std::shared_ptr<const std::vector<int>> probing_table) const;
     std::unique_ptr<PositionListIndex> ProbeAll(Vertical const& probing_columns,
                                                 ColumnLayoutRelationData& relation_data);
-    double GetAverageProbability(const PositionListIndex& xa) const;
-    double GetAverageProbability() const;
-
     std::string ToString() const;
 };
 
