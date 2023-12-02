@@ -12,10 +12,9 @@ namespace algos {
 
 class PFDTane : public Tane {
 public:
-    double CalculateZeroAryFdError(ColumnData const* rhs, ColumnLayoutRelationData const*) override;
-    double CalculateFdError(model::PositionListIndex const* lhs_pli,
-                            model::PositionListIndex const* joint_pli,
-                            ColumnLayoutRelationData const*) override;
+    double CalculateZeroAryFdError(ColumnData const* rhs) override;
+    double CalculateFdError(model::PositionListIndex const* x_pli,
+                            model::PositionListIndex const* xa_pli) override;
 };
 
 }  // namespace algos

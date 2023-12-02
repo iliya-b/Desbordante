@@ -38,17 +38,15 @@ void Tane::ResetStateFd() {
     apriori_millis_ = 0;
 }
 
-double Tane::CalculateZeroAryFdError(ColumnData const* rhs,
-                                     ColumnLayoutRelationData const* relation_data) {
+double Tane::CalculateZeroAryFdError(ColumnData const* rhs) {
     return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
-                   static_cast<double>(relation_data->GetNumTuplePairs());
+                   static_cast<double>(relation_->GetNumTuplePairs());
 }
 
 double Tane::CalculateFdError(model::PositionListIndex const* lhs_pli,
-                              model::PositionListIndex const* joint_pli,
-                              ColumnLayoutRelationData const* relation_data) {
+                              model::PositionListIndex const* joint_pli) {
     return (double)(lhs_pli->GetNepAsLong() - joint_pli->GetNepAsLong()) /
-           static_cast<double>(relation_data->GetNumTuplePairs());
+           static_cast<double>(relation_->GetNumTuplePairs());
 }
 
 double Tane::CalculateUccError(model::PositionListIndex const* pli,
@@ -117,7 +115,7 @@ unsigned long long Tane::ExecuteInternal() {
         vertex->SetPositionListIndex(column_data.GetPositionListIndex());
 
         //check FDs: 0->A
-        double fd_error = CalculateZeroAryFdError(&column_data, relation_.get());
+        double fd_error = CalculateZeroAryFdError(&column_data);
         if (fd_error <= max_fd_error_) {  //TODO: max_error
             zeroary_fd_rhs.set(column->GetIndex());
             RegisterAndCountFd(*schema->empty_vertical_, column.get(), fd_error, schema);
@@ -213,8 +211,7 @@ unsigned long long Tane::ExecuteInternal() {
                 // Check X -> A
                 double error = CalculateFdError(
                     x_vertex->GetPositionListIndex(),
-                    xa_vertex->GetPositionListIndex(),
-                    relation_.get());
+                    xa_vertex->GetPositionListIndex());
                 if (error <= max_fd_error_) {
                     Column const* rhs = schema->GetColumns()[a_index].get();
 
