@@ -1,4 +1,4 @@
-#include "probatane.h"
+#include "pfdtane.h"
 
 #include <chrono>
 #include <iomanip>
@@ -16,7 +16,7 @@
 
 namespace algos {
 
-double ProbaTane::CalculateZeroAryFdError(ColumnData const* rhs,
+double PFDTane::CalculateZeroAryFdError(ColumnData const* rhs,
                                           ColumnLayoutRelationData const* /*relation_data*/) {
     size_t max = 1;
     auto const& x_index = rhs->GetPositionListIndex();
@@ -27,7 +27,7 @@ double ProbaTane::CalculateZeroAryFdError(ColumnData const* rhs,
     return 1.0 - static_cast<double>(max) / x_index->getRelationSize();
 }
 
-double ProbaTane::CalculateFdError(model::PositionListIndex const* lhs_pli,
+double PFDTane::CalculateFdError(model::PositionListIndex const* lhs_pli,
                                    model::PositionListIndex const* joint_pli,
                                    ColumnLayoutRelationData const* /*relation_data*/) {
     double sum = 0.0;

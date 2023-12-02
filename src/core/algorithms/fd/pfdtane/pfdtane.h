@@ -10,7 +10,7 @@
 
 namespace algos {
 
-class ProbaTane : public Tane {
+class PFDTane : public Tane {
 public:
     double CalculateZeroAryFdError(ColumnData const* rhs, ColumnLayoutRelationData const*) override;
     double CalculateFdError(model::PositionListIndex const* lhs_pli,

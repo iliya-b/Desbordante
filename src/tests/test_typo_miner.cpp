@@ -124,7 +124,7 @@ template <typename F>
 static void TestForEachAlgo(F&& test) {
     for (algos::AlgorithmType const algorithm_type :
          algos::GetAllDerived<algos::PliBasedFDAlgorithm>()) {
-        if (algorithm_type._to_index() == algos::AlgorithmType::probatane) continue;
+        if (algorithm_type._to_index() == algos::AlgorithmType::pfdtane) continue;
         try {
             test(algorithm_type);
         } catch (std::runtime_error const& e) {
