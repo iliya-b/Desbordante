@@ -14,6 +14,7 @@
 #include "algorithms/fd/hyfd/hyfd.h"
 #include "algorithms/fd/pyro/pyro.h"
 #include "algorithms/fd/tane/tane.h"
+#include "algorithms/fd/pfdtane/pfdtane.h"
 #include "datasets.h"
 #include "model/table/relational_schema.h"
 #include "testing_utils.h"
@@ -152,6 +153,6 @@ REGISTER_TYPED_TEST_SUITE_P(AlgorithmTest, ThrowsOnEmpty, ReturnsEmptyOnSingleNo
                             WorksOnLongDataset, WorksOnWideDataset, LightDatasetsConsistentHash,
                             HeavyDatasetsConsistentHash, ConsistentRepeatedExecution);
 
-using Algorithms = ::testing::Types<algos::Tane, algos::Pyro, algos::FastFDs, algos::DFD,
+using Algorithms = ::testing::Types<algos::Tane, algos::PFDTane, algos::Pyro, algos::FastFDs, algos::DFD,
                                     algos::Depminer, algos::FDep, algos::FUN, algos::hyfd::HyFD>;
 INSTANTIATE_TYPED_TEST_SUITE_P(AlgorithmTest, AlgorithmTest, Algorithms);

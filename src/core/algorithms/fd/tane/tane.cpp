@@ -302,6 +302,7 @@ unsigned long long Tane::ExecuteInternal() {
     LOG(INFO) << "Total FD count: " << count_of_fd_;
     LOG(INFO) << "Total UCC count: " << count_of_ucc_;
     LOG(INFO) << "HASH: " << Fletcher16();
+    LOG(INFO) << "fds: " << GetJsonFDs();
 
     return apriori_millis_;
 }

@@ -15,14 +15,14 @@ double PFDTane::CalculateZeroAryFdError(ColumnData const* rhs) {
 double PFDTane::CalculateFdError(model::PositionListIndex const* x_pli,
                                    model::PositionListIndex const* xa_pli) {
     double sum = 0.0;
-    size_t cluster_rows_count = 0;
+    std::size_t cluster_rows_count = 0;
     std::deque<model::PositionListIndex::Cluster> const & xa_index = xa_pli->GetIndex();
     std::deque<model::PositionListIndex::Cluster> const & x_index = x_pli->GetIndex();
     auto xa_cluster_it = xa_index.begin();
 
     for (model::PositionListIndex::Cluster const & x_cluster : x_index) {
         std::size_t max = 1;
-        for(int x_row: x_cluster)
+        for(int x_row: x_cluster){
             if (xa_cluster_it == xa_index.end()) {
                 break;
             }
@@ -34,7 +34,7 @@ double PFDTane::CalculateFdError(model::PositionListIndex const* x_pli,
         sum += static_cast<double>(max) / x_cluster.size();
         cluster_rows_count += x_cluster.size();
     }
-    auto unique_rows = static_cast<unsigned int>(lhs_pli->getRelationSize() - cluster_rows_count);
+    auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
     return 1.0 - (sum + unique_rows) / (x_index.size() + unique_rows);
 }
 
