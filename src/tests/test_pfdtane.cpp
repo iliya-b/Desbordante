@@ -42,8 +42,7 @@ TEST_P(TestPFDTane, DefaultTest) {
     auto mp = algos::StdParamsMap(p.params);
     auto algos = algos::CreateAndLoadAlgorithm<algos::PFDTane>(mp);
     algos->Execute();
-    algos->CalculateFdError(algos->FdList().back().GetLhs().);
-
+ 
     
 
 }
