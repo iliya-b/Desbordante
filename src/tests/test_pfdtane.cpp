@@ -17,22 +17,15 @@ namespace onam = config::names;
 struct PFDTaneParams {
     algos::StdParamsMap params;
     long double const error = 0.;
-    size_t const num_error_clusters = 0;
-    size_t const num_error_rows = 0;
+    std::string result;
 
-    PFDTaneParams(config::IndicesType lhs_indices, config::IndicesType rhs_indices,
-                      size_t const num_error_clusters = 0, size_t const num_error_rows = 0,
-                      long double const error = 0., char const* dataset = "TestFD.csv",
-                      char const separator = ',', bool const has_header = true)
-        : params({{onam::kLhsIndices, std::move(lhs_indices)},
-                  {onam::kRhsIndices, std::move(rhs_indices)},
-                  {onam::kCsvPath, test_data_dir / dataset},
+    PFDTaneParams(std::string result, long double const error = 0., char const* dataset = "TestFD.csv",
+                    char const separator = ',', bool const has_header = true)
+        : params({{onam::kCsvPath, test_data_dir / dataset},
                   {onam::kSeparator, separator},
                   {onam::kHasHeader, has_header},
                   {onam::kEqualNulls, true}}),
-          error(error),
-          num_error_clusters(num_error_clusters),
-          num_error_rows(num_error_rows) {}
+          error(error), result(result) {}
 };
 
 class TestPFDTane : public ::testing::TestWithParam<PFDTaneParams> {};
@@ -42,49 +35,15 @@ TEST_P(TestPFDTane, DefaultTest) {
     auto mp = algos::StdParamsMap(p.params);
     auto algos = algos::CreateAndLoadAlgorithm<algos::PFDTane>(mp);
     algos->Execute();
- 
-    
-
+    EXPECT_EQ(p.result, algos->GetJsonFDs());
 }
 
 // clang-format off
 INSTANTIATE_TEST_SUITE_P(
         PFDTaneTestSuite, TestPFDTane,
         ::testing::Values(
-            PFDTaneParams({1}, {0}),
-            PFDTaneParams({2}, {0}),
-            PFDTaneParams({2}, {1}),
-            PFDTaneParams({0, 1, 2, 3, 4}, {5}),
-            PFDTaneParams({2, 3}, {5}),
-            PFDTaneParams({5}, {0}),
-            PFDTaneParams({5}, {1}),
-            PFDTaneParams({5}, {2}),
-            PFDTaneParams({5}, {3}),
-            PFDTaneParams({5}, {4}),
-            PFDTaneParams({1, 3}, {4}),
-            PFDTaneParams({5}, {0, 1, 2, 3, 4}),
-            PFDTaneParams({2}, {0, 1}),
-            PFDTaneParams({2, 3}, {0, 1, 4, 5}),
-            PFDTaneParams({2, 4}, {0, 1, 3, 5}),
-            PFDTaneParams({3, 4}, {0, 1}),
-            PFDTaneParams({1, 4}, {0, 3}),
-            PFDTaneParams({1, 3}, {0, 3}),
-            PFDTaneParams({4}, {3}, 1, 2, 2.L/132),
-            PFDTaneParams({3}, {4}, 2, 10, 26.L/132),
-            PFDTaneParams({0}, {1}, 1, 12, 108.L/132),
-            PFDTaneParams({1}, {2}, 4, 12, 16.L/132),
-            PFDTaneParams({1}, {3}, 2, 6, 8.L/132),
-            PFDTaneParams({1}, {2, 3}, 4, 12, 18.L/132),
-            PFDTaneParams({2}, {5}, 1, 2, 2.L/132),
-            PFDTaneParams({1, 3}, {5}, 3, 8, 10.L/132),
-            PFDTaneParams({1, 2}, {0, 3}, 1, 2, 2.L/132),
-            PFDTaneParams({3, 4}, {1, 2}, 3, 8, 10.L/132),
-            PFDTaneParams({2}, {3, 4}, 1, 2, 2.L/132),
-            PFDTaneParams({4}, {1, 2}, 4, 10, 12.L/132),
-            PFDTaneParams({0}, {2, 3}, 1, 12, 126.L/132),
-            PFDTaneParams({1, 4}, {2, 3, 5}, 3, 8, 10.L/132),
-            PFDTaneParams({0, 1}, {1, 4}, 2, 6, 8.L/132)
-            ));
+            PFDTaneParams(R"({"fds": [{"lhs": [1,4], "rhs": 2},{"lhs": [1,4], "rhs": 5},{"lhs": [1], "rhs": 3},{"lhs": [1], "rhs": 4},{"lhs": [2], "rhs": 1},{"lhs": [2], "rhs": 3},{"lhs": [2], "rhs": 4},{"lhs": [2], "rhs": 5},{"lhs": [3], "rhs": 1},{"lhs": [3], "rhs": 2},{"lhs": [3], "rhs": 4},{"lhs": [3], "rhs": 5},{"lhs": [4], "rhs": 1},{"lhs": [4], "rhs": 3},{"lhs": [5], "rhs": 1},{"lhs": [5], "rhs": 2},{"lhs": [5], "rhs": 3},{"lhs": [5], "rhs": 4},{"lhs": [], "rhs": 0}]})", 0.3)
+        ));
 // clang-format on
 
 }  // namespace tests

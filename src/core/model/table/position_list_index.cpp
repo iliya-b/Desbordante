@@ -198,7 +198,9 @@ std::unique_ptr<PositionListIndex> PositionListIndex::Probe(std::shared_ptr<cons
     }
 
     double new_entropy = log(relation_size_) - new_key_gap / relation_size_;
-    SortClusters(new_index);
+
+    sort(new_index.begin(), new_index.end(),
+         [&probing_table](std::vector<int> const& a, std::vector<int> const& b) { return (*probing_table)[a[0]] < (*probing_table)[b[0]]; });
 
     return std::make_unique<PositionListIndex>(std::move(new_index), std::move(null_cluster),
                                                new_size, new_entropy, new_nep, relation_size_,
