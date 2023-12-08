@@ -7,8 +7,8 @@
 namespace algos {
 
 using AlgorithmTypes =
-        std::tuple<Depminer, DFD, FastFDs, FDep, Fd_mine, Pyro, Tane, FUN, hyfd::HyFD, Aid, Apriori,
-                   metric::MetricVerifier, DataStats, fd_verifier::FDVerifier, HyUCC,
+        std::tuple<Depminer, DFD, FastFDs, FDep, Fd_mine, Pyro, Tane, PFDTane, FUN, hyfd::HyFD, Aid,
+                   Apriori, metric::MetricVerifier, DataStats, fd_verifier::FDVerifier, HyUCC,
                    cfd::FDFirstAlgorithm, ACAlgorithm>;
 
 // clang-format off
@@ -27,6 +27,7 @@ BETTER_ENUM(AlgorithmType, char,
     fdmine,
     pyro,
     tane,
+    pfdtane,
     fun,
     hyfd,
     aidfd,
