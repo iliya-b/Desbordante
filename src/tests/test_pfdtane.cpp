@@ -9,7 +9,6 @@
 #include "config/indices/type.h"
 #include "datasets.h"
 #include "fd/pfdtane/pfdtane.h"
-#include "fd/pfdtane/pfdtane.h"
 
 namespace tests {
 namespace onam = config::names;
@@ -19,13 +18,15 @@ struct PFDTaneParams {
     long double const error = 0.;
     std::string result;
 
-    PFDTaneParams(std::string result, long double const error = 0., char const* dataset = "TestFD.csv",
-                    char const separator = ',', bool const has_header = true)
+    PFDTaneParams(std::string result, long double const error = 0.,
+                  char const* dataset = "TestFD.csv", char const separator = ',',
+                  bool const has_header = true)
         : params({{onam::kCsvPath, test_data_dir / dataset},
                   {onam::kSeparator, separator},
                   {onam::kHasHeader, has_header},
                   {onam::kEqualNulls, true}}),
-          error(error), result(result) {}
+          error(error),
+          result(result) {}
 };
 
 class TestPFDTane : public ::testing::TestWithParam<PFDTaneParams> {};

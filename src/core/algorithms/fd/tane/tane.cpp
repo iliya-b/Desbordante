@@ -40,7 +40,7 @@ void Tane::ResetStateFd() {
 
 double Tane::CalculateZeroAryFdError(ColumnData const* rhs) {
     return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
-                   static_cast<double>(relation_->GetNumTuplePairs());
+                       static_cast<double>(relation_->GetNumTuplePairs());
 }
 
 double Tane::CalculateFdError(model::PositionListIndex const* lhs_pli,
@@ -116,9 +116,7 @@ unsigned long long Tane::ExecuteInternal() {
 
         //check FDs: 0->A
         double fd_error = CalculateZeroAryFdError(&column_data);
-        LOG(INFO) << "Checking column " << column->GetName() << ", err=" << fd_error << "\n";
-
-        if (fd_error <= max_fd_error_) {  //TODO: max_error
+        if (fd_error <= max_fd_error_) {  // TODO: max_error
             zeroary_fd_rhs.set(column->GetIndex());
             RegisterAndCountFd(*schema->empty_vertical_, column.get(), fd_error, schema);
 
@@ -209,19 +207,12 @@ unsigned long long Tane::ExecuteInternal() {
                 if (!a_candidates[a_index]) {
                     continue;
                 }
-                
+
                 // Check X -> A
-                double error = CalculateFdError(
-                    x_vertex->GetPositionListIndex(),
-                    xa_vertex->GetPositionListIndex());
-                Column const* rhs = schema->GetColumns()[a_index].get();
-                LOG(INFO) << "Checking " << lhs.ToString() << " -> " << rhs->GetName() << ", err=" << error << "\n";
-
-
-                // if(lhs.ToString() == "[Col3]"){
-
-                // }
+                double error = CalculateFdError(x_vertex->GetPositionListIndex(),
+                                                xa_vertex->GetPositionListIndex());
                 if (error <= max_fd_error_) {
+                    Column const* rhs = schema->GetColumns()[a_index].get();
 
                     //TODO: register FD to a file or something
                     RegisterAndCountFd(lhs, rhs, error, schema);
@@ -310,7 +301,6 @@ unsigned long long Tane::ExecuteInternal() {
     LOG(INFO) << "Total FD count: " << count_of_fd_;
     LOG(INFO) << "Total UCC count: " << count_of_ucc_;
     LOG(INFO) << "HASH: " << Fletcher16();
-    LOG(INFO) << "fds: " << GetJsonFDs();
 
     return apriori_millis_;
 }
