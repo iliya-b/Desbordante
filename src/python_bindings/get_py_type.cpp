@@ -69,6 +69,7 @@ py::tuple GetPyType(std::type_index type_index) {
             PyTypePair<long double, py_float>,
             PyTypePair<algos::metric::Metric, py_str>,
             PyTypePair<algos::metric::MetricAlgo, py_str>,
+            PyTypePair<config::ErrorMeasureType, py_str>,
             PyTypePair<algos::InputFormat, py_str>,
             PyTypePair<std::vector<unsigned int>, py_list, py_int>,
             {typeid(config::InputTable),

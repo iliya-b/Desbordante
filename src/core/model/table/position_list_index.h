@@ -129,7 +129,10 @@ public:
     }
 
     std::unique_ptr<PositionListIndex> Intersect(PositionListIndex const* that) const;
+    std::unique_ptr<PositionListIndex> IntersectPFD(PositionListIndex const* that) const;
     std::unique_ptr<PositionListIndex> Probe(
+            std::shared_ptr<const std::vector<int>> probing_table) const;
+    std::unique_ptr<PositionListIndex> ProbePFD(
             std::shared_ptr<const std::vector<int>> probing_table) const;
     std::unique_ptr<PositionListIndex> ProbeAll(Vertical const& probing_columns,
                                                 ColumnLayoutRelationData& relation_data);

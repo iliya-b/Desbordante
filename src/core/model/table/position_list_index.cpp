@@ -154,6 +154,13 @@ std::unique_ptr<PositionListIndex> PositionListIndex::Intersect(
                                      : this->Probe(that->CalculateAndGetProbingTable());
 }
 
+std::unique_ptr<PositionListIndex> PositionListIndex::IntersectPFD(
+        PositionListIndex const* that) const {
+    assert(this->relation_size_ == that->relation_size_);
+    return this->size_ > that->size_ ? that->ProbePFD(this->CalculateAndGetProbingTable())
+                                     : this->ProbePFD(that->CalculateAndGetProbingTable());
+}
+
 // TODO: null_cluster_ некорректен
 std::unique_ptr<PositionListIndex> PositionListIndex::Probe(
         std::shared_ptr<const std::vector<int>> probing_table) const {
@@ -196,10 +203,58 @@ std::unique_ptr<PositionListIndex> PositionListIndex::Probe(
     }
 
     double new_entropy = log(relation_size_) - new_key_gap / relation_size_;
+    SortClusters(new_index);
+    return std::make_unique<PositionListIndex>(std::move(new_index), std::move(null_cluster),
+                                               new_size, new_entropy, new_nep, relation_size_,
+                                               relation_size_);
+}
+
+
+std::unique_ptr<PositionListIndex> PositionListIndex::ProbePFD(
+        std::shared_ptr<const std::vector<int>> probing_table) const {
+    assert(this->relation_size_ == probing_table->size());
+    std::deque<std::vector<int>> new_index;
+    unsigned int new_size = 0;
+    double new_key_gap = 0.0;
+    unsigned long long new_nep = 0;
+    std::vector<int> null_cluster;
+
+    std::unordered_map<int, std::vector<int>> partial_index;
+
+    for (auto& positions : index_) {
+        for (int position : positions) {
+            if (probing_table == nullptr) LOG(DEBUG) << "NULLPTR";
+            if (position < 0 || static_cast<size_t>(position) >= probing_table->size()) {
+                LOG(DEBUG) << "position: " + std::to_string(position) +
+                                      ", size: " + std::to_string(probing_table->size());
+                for (size_t i = 0; i < positions.size(); ++i) {
+                    LOG(DEBUG) << "Position " + std::to_string(positions[i]);
+                }
+            }
+            int probing_table_value_id = (*probing_table)[position];
+            if (probing_table_value_id == singleton_value_id_) continue;
+            intersection_count_++;
+            partial_index[probing_table_value_id].push_back(position);
+        }
+
+        for (auto& iter : partial_index) {
+            auto& cluster = iter.second;
+            if (cluster.size() <= 1) continue;
+
+            new_size += cluster.size();
+            new_key_gap += cluster.size() * log(cluster.size());
+            new_nep += CalculateNep(cluster.size());
+
+            new_index.push_back(std::move(cluster));
+        }
+        partial_index.clear();
+    }
+
+    double new_entropy = log(relation_size_) - new_key_gap / relation_size_;
     std::sort(new_index.begin(), new_index.end(),
-              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
-                  return (*probing_table)[a[0]] < (*probing_table)[b[0]];
-              });
+            [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
+              return (*probing_table)[a[0]] < (*probing_table)[b[0]];
+    });
     return std::make_unique<PositionListIndex>(std::move(new_index), std::move(null_cluster),
                                                new_size, new_entropy, new_nep, relation_size_,
                                                relation_size_);
