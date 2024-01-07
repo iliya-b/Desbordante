@@ -7,19 +7,19 @@
 
 #include <easylogging++.h>
 
-#include "fd/tane/lattice_level.h"
-#include "fd/tane/lattice_vertex.h"
+#include "config/error/option.h"
+#include "config/max_lhs/option.h"
+#include "lattice_level.h"
+#include "lattice_vertex.h"
 #include "model/table/column_data.h"
 #include "model/table/column_layout_relation_data.h"
 #include "model/table/relational_schema.h"
-#include "config/max_lhs/option.h"
-#include "config/error/option.h"
 
 namespace algos {
+
 using boost::dynamic_bitset;
 
-
-Tane::Tane() : algos::PliBasedFDAlgorithm({kDefaultPhaseName}) {
+Tane::Tane() : PliBasedFDAlgorithm({kDefaultPhaseName}) {
     RegisterOptions();
 }
 
@@ -38,22 +38,33 @@ void Tane::ResetStateFd() {
     apriori_millis_ = 0;
 }
 
-double Tane::CalculateUccError(model::PositionListIndex const* pli,
+double Tane::CalculateZeroAryFdError(ColumnData const* rhs,
                                      ColumnLayoutRelationData const* relation_data) {
+    return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
+                       static_cast<double>(relation_data->GetNumTuplePairs());
+}
+
+double Tane::CalculateFdError(model::PositionListIndex const* lhs_pli,
+                              model::PositionListIndex const* joint_pli,
+                              ColumnLayoutRelationData const* relation_data) {
+    return (double)(lhs_pli->GetNepAsLong() - joint_pli->GetNepAsLong()) /
+           static_cast<double>(relation_data->GetNumTuplePairs());
+}
+
+double Tane::CalculateUccError(model::PositionListIndex const* pli,
+                               ColumnLayoutRelationData const* relation_data) {
     return pli->GetNepAsLong() / static_cast<double>(relation_data->GetNumTuplePairs());
 }
 
-
-void Tane::RegisterAndCountFd(Vertical const& lhs, Column const* rhs,
-                                    [[maybe_unused]] double error,
-                                    [[maybe_unused]] RelationalSchema const* schema) {
+void Tane::RegisterAndCountFd(Vertical const& lhs, Column const* rhs, [[maybe_unused]] double error,
+                              [[maybe_unused]] RelationalSchema const* schema) {
     dynamic_bitset<> lhs_bitset = lhs.GetColumnIndices();
     PliBasedFDAlgorithm::RegisterFd(lhs, *rhs);
     count_of_fd_++;
 }
 
 void Tane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] double error,
-                             [[maybe_unused]] RelationalSchema const* schema) {
+                       [[maybe_unused]] RelationalSchema const* schema) {
     /*dynamic_bitset<> key_bitset = key.getColumnIndices();
     LOG(INFO) << "Discovered UCC: ";
     for (int i = key_bitset.find_first(); i != -1; i = key_bitset.find_next(i)) {
@@ -61,17 +72,6 @@ void Tane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] do
     }
     LOG(INFO) << "- error equals " << error << std::endl;*/
     count_of_ucc_++;
-}
-
-double Tane::CalculateZeroAryFdError(ColumnData const* rhs) {
-    return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
-                       static_cast<double>(GetRelation().GetNumTuplePairs());
-}
-
-double Tane::CalculateFdError(model::PositionListIndex const* lhs_pli,
-                              model::PositionListIndex const* joint_pli) {
-    return (double)(lhs_pli->GetNepAsLong() - joint_pli->GetNepAsLong()) /
-           static_cast<double>(GetRelation().GetNumTuplePairs());
 }
 
 unsigned long long Tane::ExecuteInternal() {
@@ -116,7 +116,7 @@ unsigned long long Tane::ExecuteInternal() {
         vertex->SetPositionListIndex(column_data.GetPositionListIndex());
 
         // check FDs: 0->A
-        double fd_error = CalculateZeroAryFdError(&column_data);
+        double fd_error = CalculateZeroAryFdError(&column_data, relation_.get());
         if (fd_error <= max_fd_error_) {  // TODO: max_error
             zeroary_fd_rhs.set(column->GetIndex());
             RegisterAndCountFd(*schema->empty_vertical_, column.get(), fd_error, schema);
@@ -194,7 +194,7 @@ unsigned long long Tane::ExecuteInternal() {
             dynamic_bitset<> xa_indices = xa.GetColumnIndices();
             dynamic_bitset<> a_candidates = xa_vertex->GetRhsCandidates();
 
-            for (const auto& x_vertex : xa_vertex->GetParents()) {
+            for (auto const& x_vertex : xa_vertex->GetParents()) {
                 Vertical const& lhs = x_vertex->GetVertical();
 
                 // Find index of A in XA. If a is not a candidate, continue. TODO: possible to do it
@@ -211,7 +211,7 @@ unsigned long long Tane::ExecuteInternal() {
 
                 // Check X -> A
                 double error = CalculateFdError(x_vertex->GetPositionListIndex(),
-                                                xa_vertex->GetPositionListIndex());
+                                                xa_vertex->GetPositionListIndex(), relation_.get());
                 if (error <= max_fd_error_) {
                     Column const* rhs = schema->GetColumns()[a_index].get();
 
@@ -252,7 +252,7 @@ unsigned long long Tane::ExecuteInternal() {
                                     static_cast<Vertical>(*schema->GetColumn((int)rhs_index));
                             if (!columns.Contains(rhs)) {
                                 bool is_rhs_candidate = true;
-                                for (const auto& column : columns.GetColumns()) {
+                                for (auto const& column : columns.GetColumns()) {
                                     Vertical sibling =
                                             columns.Without(static_cast<Vertical>(*column))
                                                     .Union(rhs);

@@ -3,16 +3,14 @@
 #include <string>
 
 #include "algorithms/fd/tane/tane.h"
+#include "config/error_measure/type.h"
 #include "model/table/position_list_index.h"
 #include "model/table/relation_data.h"
-#include "config/error_measure/type.h"
 
 namespace algos {
 
-
 class PFDTane : public PliBasedFDAlgorithm {
 private:
-
     void ResetStateFd() final;
     void RegisterOptions();
     void MakeExecuteOptsAvailable() final;
@@ -43,11 +41,10 @@ public:
 
     double CalculateZeroAryFdErrorPerValue(ColumnData const* rhs);
     double CalculateFdErrorPerValue(model::PositionListIndex const* x_pli,
-                            model::PositionListIndex const* xa_pli);
+                                    model::PositionListIndex const* xa_pli);
     double CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs);
     double CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
-                            model::PositionListIndex const* xa_pli);
-
+                                    model::PositionListIndex const* xa_pli);
 };
 
 }  // namespace algos

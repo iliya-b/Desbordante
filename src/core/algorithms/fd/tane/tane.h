@@ -12,11 +12,11 @@ namespace algos {
 
 class Tane : public PliBasedFDAlgorithm {
 private:
-
-    void ResetStateFd() final;
     void RegisterOptions();
     void MakeExecuteOptsAvailable() final;
-    unsigned long long ExecuteInternal() override final;
+
+    void ResetStateFd() final;
+    unsigned long long ExecuteInternal() final;
 
 public:
     config::ErrorType max_fd_error_;
@@ -29,6 +29,11 @@ public:
 
     Tane();
 
+    static double CalculateZeroAryFdError(ColumnData const* rhs,
+                                          ColumnLayoutRelationData const* relation_data);
+    static double CalculateFdError(model::PositionListIndex const* lhs_pli,
+                                   model::PositionListIndex const* joint_pli,
+                                   ColumnLayoutRelationData const* relation_data);
     static double CalculateUccError(model::PositionListIndex const* pli,
                                     ColumnLayoutRelationData const* relation_data);
 
@@ -39,11 +44,6 @@ public:
     // void RegisterFd(Vertical const* lhs, Column const* rhs, double error, RelationalSchema const*
     // schema);
     void RegisterUcc(Vertical const& key, double error, RelationalSchema const* schema);
-
-    double CalculateZeroAryFdError(ColumnData const* rhs);
-    double CalculateFdError(model::PositionListIndex const* x_pli,
-                            model::PositionListIndex const* xa_pli);
-
 };
 
 }  // namespace algos

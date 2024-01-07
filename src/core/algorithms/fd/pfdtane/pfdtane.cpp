@@ -7,23 +7,21 @@
 
 #include <easylogging++.h>
 
+#include "config/error/option.h"
+#include "config/error_measure/option.h"
+#include "config/max_lhs/option.h"
 #include "fd/tane/lattice_level.h"
 #include "fd/tane/lattice_vertex.h"
 #include "model/table/column_data.h"
 #include "model/table/column_layout_relation_data.h"
 #include "model/table/relational_schema.h"
-#include "config/max_lhs/option.h"
-#include "config/error/option.h"
-#include "config/error_measure/option.h"
 
 namespace algos {
 using boost::dynamic_bitset;
 
-
 PFDTane::PFDTane() : algos::PliBasedFDAlgorithm({kDefaultPhaseName}) {
     RegisterOptions();
 }
-
 
 double PFDTane::CalculateZeroAryFdErrorPerValue(ColumnData const* rhs) {
     size_t max = 1;
@@ -35,10 +33,15 @@ double PFDTane::CalculateZeroAryFdErrorPerValue(ColumnData const* rhs) {
 }
 
 double PFDTane::CalculateFdErrorPerValue(model::PositionListIndex const* x_pli,
-                                 model::PositionListIndex const* xa_pli) {
+                                         model::PositionListIndex const* xa_pli) {
+    auto xa_index = xa_pli->GetIndex();
+    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
+    std::sort(xa_index.begin(), xa_index.end(),
+              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
+                  return probing_table->at(a[0]) < probing_table->at(b[0]);
+              });
     double sum = 0.0;
     std::size_t cluster_rows_count = 0;
-    std::deque<model::PositionListIndex::Cluster> const& xa_index = xa_pli->GetIndex();
     std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
     auto xa_cluster_it = xa_index.begin();
 
@@ -70,10 +73,17 @@ double PFDTane::CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs) {
 }
 
 double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
-                                 model::PositionListIndex const* xa_pli) {
+                                         model::PositionListIndex const* xa_pli) {
+    auto xa_index = xa_pli->GetIndex();
+    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
+    std::sort(xa_index.begin(), xa_index.end(),
+              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
+                  return probing_table->at(a[0]) < probing_table->at(b[0]);
+              });
+
     double sum = 0.0;
     std::size_t cluster_rows_count = 0;
-    std::deque<model::PositionListIndex::Cluster> const& xa_index = xa_pli->GetIndex();
+    // std::deque<model::PositionListIndex::Cluster> const& xa_index = xa_pli->GetIndex();
     std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
     auto xa_cluster_it = xa_index.begin();
 
@@ -95,7 +105,6 @@ double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
     return 1.0 - (sum + unique_rows) / (x_index.size() + unique_rows);
 }
 
-
 void PFDTane::RegisterOptions() {
     RegisterOption(config::ErrorOpt(&max_ucc_error_));
     RegisterOption(config::ErrorMeasureOpt(&error_measure_));
@@ -114,20 +123,20 @@ void PFDTane::ResetStateFd() {
 }
 
 double PFDTane::CalculateUccError(model::PositionListIndex const* pli,
-                                     ColumnLayoutRelationData const* relation_data) {
+                                  ColumnLayoutRelationData const* relation_data) {
     return pli->GetNepAsLong() / static_cast<double>(relation_data->GetNumTuplePairs());
 }
 
 void PFDTane::RegisterAndCountFd(Vertical const& lhs, Column const* rhs,
-                                    [[maybe_unused]] double error,
-                                    [[maybe_unused]] RelationalSchema const* schema) {
+                                 [[maybe_unused]] double error,
+                                 [[maybe_unused]] RelationalSchema const* schema) {
     dynamic_bitset<> lhs_bitset = lhs.GetColumnIndices();
     PliBasedFDAlgorithm::RegisterFd(lhs, *rhs);
     count_of_fd_++;
 }
 
 void PFDTane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] double error,
-                             [[maybe_unused]] RelationalSchema const* schema) {
+                          [[maybe_unused]] RelationalSchema const* schema) {
     /*dynamic_bitset<> key_bitset = key.getColumnIndices();
     LOG(INFO) << "Discovered UCC: ";
     for (int i = key_bitset.find_first(); i != -1; i = key_bitset.find_next(i)) {
@@ -137,12 +146,11 @@ void PFDTane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]]
     count_of_ucc_++;
 }
 
-
 unsigned long long PFDTane::ExecuteInternal() {
     max_fd_error_ = max_ucc_error_;
     RelationalSchema const* schema = relation_->GetSchema();
-    auto calculate_fd_error =
-            error_measure_ == "per_tuple" ? &PFDTane::CalculateFdErrorPerTuple : &PFDTane::CalculateFdErrorPerValue;
+    auto calculate_fd_error = error_measure_ == "per_tuple" ? &PFDTane::CalculateFdErrorPerTuple
+                                                            : &PFDTane::CalculateFdErrorPerValue;
     auto calculate_fd_zero_ary_error = error_measure_ == "per_tuple"
                                                ? &PFDTane::CalculateZeroAryFdErrorPerTuple
                                                : &PFDTane::CalculateZeroAryFdErrorPerValue;
@@ -257,12 +265,12 @@ unsigned long long PFDTane::ExecuteInternal() {
             if (xa_vertex->GetPositionListIndex() == nullptr) {
                 auto parent_pli_1 = xa_vertex->GetParents()[0]->GetPositionListIndex();
                 auto parent_pli_2 = xa_vertex->GetParents()[1]->GetPositionListIndex();
-                xa_vertex->AcquirePositionListIndex(parent_pli_1->IntersectPFD(parent_pli_2));
+                xa_vertex->AcquirePositionListIndex(parent_pli_1->Intersect(parent_pli_2));
             }
 
             dynamic_bitset<> xa_indices = xa.GetColumnIndices();
             dynamic_bitset<> a_candidates = xa_vertex->GetRhsCandidates();
-
+            auto xa_pli = xa_vertex->GetPositionListIndex();
             for (const auto& x_vertex : xa_vertex->GetParents()) {
                 Vertical const& lhs = x_vertex->GetVertical();
 
@@ -277,11 +285,10 @@ unsigned long long PFDTane::ExecuteInternal() {
                 if (!a_candidates[a_index]) {
                     continue;
                 }
+                auto x_pli = x_vertex->GetPositionListIndex();
 
                 // Check X -> A
-                double error =
-                        (this->*calculate_fd_error)(x_vertex->GetPositionListIndex(),
-                                           xa_vertex->GetPositionListIndex());
+                double error = (this->*calculate_fd_error)(x_pli, xa_pli);
                 if (error <= max_fd_error_) {
                     Column const* rhs = schema->GetColumns()[a_index].get();
 
@@ -375,6 +382,7 @@ unsigned long long PFDTane::ExecuteInternal() {
     LOG(INFO) << "Total FD count: " << count_of_fd_;
     LOG(INFO) << "Total UCC count: " << count_of_ucc_;
     LOG(INFO) << "HASH: " << Fletcher16();
+    LOG(INFO) << "data: " << GetJsonFDs();
 
     return apriori_millis_;
 }
