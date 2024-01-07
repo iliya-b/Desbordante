@@ -11,6 +11,7 @@
 #include "algorithms/ucc/ucc.h"
 #include "algorithms/ucc/ucc_algorithm.h"
 #include "all_tables_config.h"
+#include "config/names.h"
 #include "config/thread_number/type.h"
 #include "table_config.h"
 
@@ -59,6 +60,7 @@ protected:
         assert(threads > 0);
         threads_ = threads;
     }
+
     void PerformConsistentHashTestOn(std::vector<TableConfigHash> const& datasets) {
         for (auto const& [config, hash] : datasets) {
             try {
@@ -83,6 +85,10 @@ protected:
 public:
     static algos::StdParamsMap GetParamMap(tests::TableConfig const& config) {
         using namespace config::names;
+        // Here we return StdParamsMap with option kThreads but some algorithms does not need this
+        // option (PyroUCC for example). This does not generate errors, because when creating the
+        // algorithm with function CreateAndLoadAlgorithm only the options necessary for the
+        // algorithm will be used
         return {{kCsvPath, config.GetPath()},
                 {kSeparator, config.separator},
                 {kHasHeader, config.has_header},
@@ -165,7 +171,7 @@ REGISTER_TYPED_TEST_SUITE_P(UCCAlgorithmTest, ConsistentHashOnLightDatasets,
                             ConsistentHashOnHeavyDatasets, ConsistentHashOnLightDatasetsParallel,
                             ConsistentHashOnHeavyDatasetsParallel);
 
-using Algorithms = ::testing::Types<algos::HyUCC>;
+using Algorithms = ::testing::Types<algos::HyUCC, algos::PyroUCC>;
 INSTANTIATE_TYPED_TEST_SUITE_P(UCCAlgorithmTest, UCCAlgorithmTest, Algorithms);
 
 }  // namespace tests

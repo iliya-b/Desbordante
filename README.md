@@ -11,6 +11,7 @@ Desbordante is a high-performance data profiler that is capable of discovering a
 * Conditional functional dependencies (discovery)
 * Metric functional dependencies (validation)
 * Fuzzy algebraic constraints (discovery)
+* Unique column combinations (discovery and validation)
 * Association rules (discovery)
 
 The discovered patterns can have many uses:
@@ -83,12 +84,10 @@ Simple usage examples:
 ```python
 import desbordante
 
-TABLE = '../examples/datasets/university_fd.csv'
+TABLE = 'examples/datasets/university_fd.csv'
 
 algo = desbordante.HyFD()
-algo.set_option('table', (TABLE, ',', True))
-algo.set_option('is_null_equal_null')
-algo.load_data()
+algo.load_data(TABLE, ',', True)
 algo.execute()
 result = algo.get_fds()
 print('FDs:')
@@ -110,22 +109,16 @@ FDs:
 ```python
 import desbordante
 
-TABLE = '../examples/datasets/inventory_afd.csv'
+TABLE = 'examples/datasets/inventory_afd.csv'
 ERROR = 0.1
 
 algo = desbordante.Pyro()
-algo.set_option('table', (TABLE, ',', True))
-algo.set_option('is_null_equal_null')
-algo.load_data()
-algo.set_option('error', ERROR)
-algo.set_option('threads')
-algo.set_option('max_lhs')
-algo.set_option('seed')
-algo.execute()
+algo.load_data(TABLE, ',', True)
+algo.execute(error=ERROR)
 result = algo.get_fds()
 print('AFDs:')
 for fd in result:
-	print(fd)
+    print(fd)
 ```
 ```text
 AFDs:
@@ -139,22 +132,16 @@ AFDs:
 ```python
 import desbordante
 
-TABLE = '../examples/datasets/theatres_mfd.csv'
+TABLE = 'examples/datasets/theatres_mfd.csv'
 METRIC = 'euclidean'
 LHS_INDICES = [0]
 RHS_INDICES = [2]
 PARAMETER = 5
 
 algo = desbordante.MetricVerifier()
-algo.set_option('table', (TABLE, ',', True))
-algo.set_option('is_null_equal_null')
-algo.load_data()
-algo.set_option('lhs_indices', LHS_INDICES)
-algo.set_option('metric', METRIC)
-algo.set_option('parameter', PARAMETER)
-algo.set_option('dist_from_null_is_infinity')
-algo.set_option('rhs_indices', RHS_INDICES)
-algo.execute()
+algo.load_data(TABLE, ',', True)
+algo.execute(lhs_indices=LHS_INDICES, metric=METRIC,
+	     parameter=PARAMETER, rhs_indices=RHS_INDICES)
 if algo.mfd_holds():
     print('MFD holds')
 else:
@@ -204,42 +191,82 @@ Prior to cloning the repository and attempting to build the project, ensure that
 To use test datasets you will need:
 - Git Large File Storage, version 3.0.2+
 
-### Building the project (first option: with tests)
-Firstly, navigate to a desired directory.
-Then, clone the repository, cd into the project directory and launch the build script:
-```
-git clone https://github.com/Mstrutov/Desbordante/
-cd Desbordante
-./pull_datasets.sh
-./build.sh
-```
+### Building the project
+#### Building the Python module using pip (this is what you probably want if you are not a developer)
+**NOTE**: this step is mandatory for setting up the Command Line Interface for Desbordante.
 
-### Building the project (second option: without tests)
-
-Firstly, navigate to a desired directory.
-Then, clone the repository, cd into the project directory and launch the build script:
-```
-git clone https://github.com/Mstrutov/Desbordante/
-cd Desbordante
-./build.sh --no-tests --no-unpack
-```
-
-### Launching the binaries
-The script generates the following file structure in `/path/to/Desbordante/build/target`:
+Firstly, navigate to a directory of choice.
+Then, clone the repository, change the current directory to the project directory and run the following commands:
 ```bash
+./build.sh
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install .
+```
+
+Now it is possible to `import desbordante` as a module from within the created virtual environment. The CLI for Desbordante can be run using the following commands:
+```sh
+pip install -r cli/requirements.txt
+python3 cli/cli.py --help
+```
+
+#### Building tests & the Python module manually
+In order to build tests, pull the test datasets using the following command:
+```sh
+./pull_datasets.sh
+```
+then build the tests themselves:
+```sh
+./build.sh -j$(nproc)
+```
+
+The Python module can be built by providing the `--pybind` switch:
+```sh
+./build.sh --pybind -j$(nproc)
+```
+
+See `./build.sh --help` for more available options.
+
+The `./build.sh` script generates the following file structure in `/path/to/Desbordante/build/target`:
+```
 ├───input_data
 │   └───some-sample-csv\'s.csv
 ├───Desbordante_test
-├───Desbordante_run
+├───desbordante.cpython-*.so
 ```
-The `input_data` directory contains several .csv files that may be used by `Desbordante_test`. Run `Desbordante_test` to perform unit testing:
-```
+
+The `input_data` directory contains several .csv files that are used by `Desbordante_test`. Run `Desbordante_test` to perform unit testing:
+```sh
 cd build/target
 ./Desbordante_test
 ```
-The tool itself may be run like the following:
+
+`desbordante.cpython-*.so` is a Python module, packaging Python bindings for the Desbordante core library. In order to use it, simply `import` it:
+```sh
+cd build/target
+python3
+>>> import desbordante
 ```
-./Desbordante_run --algo=tane --data=<path_to_dataset>
+
+We use [easyloggingpp](https://github.com/abumq/easyloggingpp) in order to log (mostly debug) information in the core library. Python bindings search for a configuration file in the working directory, so to configure logging, create `logging.conf` in the directory from which desbordante will be imported. In particular, when running the CLI with `python3 ./relative/path/to/cli.py`, `logging.conf` should be located in `.`.
+
+#### Troubleshooting Git LFS
+If, when cloning the repo with git lfs installed, `git clone` produces the following (or similar) error:
+```
+Cloning into 'Desbordante'...
+remote: Enumerating objects: 13440, done.
+remote: Counting objects: 100% (13439/13439), done.
+remote: Compressing objects: 100% (3784/3784), done.
+remote: Total 13440 (delta 9537), reused 13265 (delta 9472), pack-reused 1
+Receiving objects: 100% (13440/13440), 125.78 MiB | 8.12 MiB/s, done.
+Resolving deltas: 100% (9537/9537), done.
+Updating files: 100% (478/478), done.
+Downloading datasets/datasets.zip (102 MB)
+Error downloading object: datasets/datasets.zip (2085458): Smudge error: Error downloading datasets/datasets.zip (2085458e26e55ea68d79bcd2b8e5808de731de6dfcda4407b06b30bce484f97b): batch response: This repository is over its data quota. Account responsible for LFS bandwidth should purchase more data packs to restore access.
+```
+delete the already cloned version, set `GIT_LFS_SKIP_SMUDGE=1` environment variable and clone the repo again:
+```sh
+GIT_LFS_SKIP_SMUDGE=1 git clone git@github.com:Mstrutov/Desbordante.git
 ```
 
 ## Cite
@@ -252,7 +279,4 @@ If you use this software for research, please cite one of our papers:
 # Contacts and Q&A
 
 If you have any questions regarding the tool usage you can ask it in our [google group](https://groups.google.com/g/desbordante). To contact dev team email George Chernishev, Maxim Strutovsky or Nikita Bobrov.
-
-
-
 

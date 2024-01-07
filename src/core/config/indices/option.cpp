@@ -13,8 +13,9 @@ static void NormalizeIndices(config::IndicesType& indices) {
     indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
 }
 
-IndicesOption::IndicesOption(std::string_view name, std::string_view description)
-    : common_option_(name, description, {}, NormalizeIndices) {}
+IndicesOption::IndicesOption(std::string_view name, std::string_view description,
+                             typename Option<config::IndicesType>::DefaultFunc calculate_default)
+    : common_option_(name, description, std::move(calculate_default), NormalizeIndices, nullptr) {}
 
 std::string_view IndicesOption::GetName() const {
     return common_option_.GetName();
@@ -41,7 +42,7 @@ Option<config::IndicesType> IndicesOption::operator()(
 
 using config::names::kLhsIndices, config::descriptions::kDLhsIndices;
 using config::names::kRhsIndices, config::descriptions::kDRhsIndices;
-extern const IndicesOption LhsIndicesOpt{kLhsIndices, kDLhsIndices};
-extern const IndicesOption RhsIndicesOpt{kRhsIndices, kDRhsIndices};
+extern IndicesOption const LhsIndicesOpt{kLhsIndices, kDLhsIndices};
+extern IndicesOption const RhsIndicesOpt{kRhsIndices, kDRhsIndices};
 
 }  // namespace config

@@ -30,7 +30,7 @@ if (ASAN AND PYTHON)
 endif()
 
 # compiler and platform-dependent settings
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  "${CMAKE_BINARY_DIR}/target")
 if (MSVC)
     add_compile_options(/MT /MTd /EHsc)
@@ -89,7 +89,7 @@ endif()
 
 # configuring boost
 set(Boost_USE_STATIC_LIBS OFF)
-find_package(Boost 1.72.0 REQUIRED COMPONENTS container program_options thread)
+find_package(Boost 1.72.0 REQUIRED COMPONENTS container thread)
 include_directories(${Boost_INCLUDE_DIRS})
 message(${Boost_INCLUDE_DIRS})
 

@@ -329,7 +329,7 @@ def check_mismatch(algo: str | None, task: str | None) -> None:
 
 
 def check_error_option_presence(task: str | None, error: str | None) -> None:
-    if task in (Task.afd, Task.afd_verification) and error is None:
+    if task == Task.afd and error is None:
         click.echo(f"ERROR: Missing option '{ERROR}'.")
         sys.exit(1)
     if task in (Task.fd, Task.fd_verification) and error is not None:
@@ -370,7 +370,13 @@ def get_algo_result(algo: desbordante.Algorithm, algo_name: str) -> Any:
             case Algorithm.naive_fd_verifier:
                 result = algo.fd_holds()
             case Algorithm.naive_afd_verifier:
-                result = algo.get_error()
+                error = algo.get_error()
+                if error == 0.0:
+                    result = 'Exact functional dependency holds'
+                else:
+                    result = (f'Exact functional dependency does not hold, but '
+                              f'instead approximate functional dependency '
+                              f'holds with error = {error}')
             case Algorithm.icde09_mfd_verifier:
                 result = algo.mfd_holds()
             case algo_name if algo_name in TASK_INFO[Task.fd].algos:
