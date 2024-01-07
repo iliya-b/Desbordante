@@ -81,9 +81,8 @@ double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
                   return probing_table->at(a[0]) < probing_table->at(b[0]);
               });
 
-    double sum = 0.0;
+    std::size_t sum = 0;
     std::size_t cluster_rows_count = 0;
-    // std::deque<model::PositionListIndex::Cluster> const& xa_index = xa_pli->GetIndex();
     std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
     auto xa_cluster_it = xa_index.begin();
 
@@ -98,11 +97,11 @@ double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
                 xa_cluster_it++;
             }
         }
-        sum += static_cast<double>(max) / x_cluster.size();
+        sum += max;
         cluster_rows_count += x_cluster.size();
     }
     auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
-    return 1.0 - (sum + unique_rows) / (x_index.size() + unique_rows);
+    return 1.0 - static_cast<double>(sum + unique_rows) / x_pli->getRelationSize();
 }
 
 void PFDTane::RegisterOptions() {
