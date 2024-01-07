@@ -5,7 +5,7 @@
 
 namespace config {
 using names::kErrorMeasure, descriptions::kDErrorMeasure;
-extern const CommonOption<ErrorMeasureType> ErrorMeasureOpt{
+extern CommonOption<ErrorMeasureType> const ErrorMeasureOpt{
         kErrorMeasure, kDErrorMeasure, "e", {}, [](ErrorMeasureType error) {
             if (!(error == "e" || error == "per_value" || error == "per_tuple")) {
                 throw ConfigurationError("ERROR: error function can be e, per_value or per_tuple");

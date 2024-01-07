@@ -270,7 +270,7 @@ unsigned long long PFDTane::ExecuteInternal() {
             dynamic_bitset<> xa_indices = xa.GetColumnIndices();
             dynamic_bitset<> a_candidates = xa_vertex->GetRhsCandidates();
             auto xa_pli = xa_vertex->GetPositionListIndex();
-            for (const auto& x_vertex : xa_vertex->GetParents()) {
+            for (auto const& x_vertex : xa_vertex->GetParents()) {
                 Vertical const& lhs = x_vertex->GetVertical();
 
                 // Find index of A in XA. If a is not a candidate, continue. TODO: possible to do it
@@ -328,7 +328,7 @@ unsigned long long PFDTane::ExecuteInternal() {
                                     static_cast<Vertical>(*schema->GetColumn((int)rhs_index));
                             if (!columns.Contains(rhs)) {
                                 bool is_rhs_candidate = true;
-                                for (const auto& column : columns.GetColumns()) {
+                                for (auto const& column : columns.GetColumns()) {
                                     Vertical sibling =
                                             columns.Without(static_cast<Vertical>(*column))
                                                     .Union(rhs);
