@@ -23,6 +23,7 @@ struct KeysTestParams {
     std::string_view const dataset;
     char const sep;
     bool const has_header;
+
     KeysTestParams(std::vector<unsigned int> expected, std::string_view const dataset,
                    char const sep = ',', bool const has_header = true) noexcept
         : expected(std::move(expected)), dataset(dataset), sep(sep), has_header(has_header) {}
@@ -31,14 +32,14 @@ struct KeysTestParams {
 class KeysTest : public ::testing::TestWithParam<KeysTestParams> {};
 
 template <typename AlgoInterface>
-static inline void GetKeysTestImpl(KeysTestParams const& p) {
+inline static void GetKeysTestImpl(KeysTestParams const& p) {
     namespace onam = config::names;
     auto path = test_data_dir / p.dataset;
     std::vector<unsigned int> actual;
     StdParamsMap params_map{{onam::kCsvPath, path},
                             {onam::kSeparator, p.sep},
                             {onam::kHasHeader, p.has_header},
-                            {onam::kSeed, decltype(pyro::Parameters::seed){0}},
+                            {onam::kSeed, decltype(algos::pyro::Parameters::seed){0}},
                             {onam::kError, config::ErrorType{0.0}}};
     auto pyro_ptr = algos::CreateAndLoadAlgorithm<algos::Pyro>(params_map);
     auto& pyro = *pyro_ptr;

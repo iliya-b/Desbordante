@@ -2,6 +2,9 @@
 
 #include <cassert>
 
+#include <boost/math/special_functions/next.hpp>
+#include <boost/math/special_functions/relative_difference.hpp>
+
 #include "numeric_type.h"
 
 namespace model {
@@ -10,11 +13,19 @@ class DoubleType final : public NumericType<Double> {
 public:
     DoubleType() noexcept : NumericType<Double>(TypeId::kDouble) {}
 
+    static unsigned int const kDefaultEpsCount = 5;
+
     CompareResult Compare(std::byte const* l, std::byte const* r) const final {
+        return CompareEPS(l, r, kDefaultEpsCount);
+    }
+
+    static CompareResult CompareEPS(std::byte const* l, std::byte const* r,
+                                    unsigned int eps_count) {
         Double l_val = GetValue(l);
         Double r_val = GetValue(r);
 
-        if (std::abs(l_val - r_val) < std::numeric_limits<Double>::epsilon()) {
+        if (boost::math::relative_difference(l_val, r_val) <
+            eps_count * std::numeric_limits<model::Double>::epsilon()) {
             return CompareResult::kEqual;
         }
 
@@ -29,7 +40,7 @@ public:
         return std::make_unique<DoubleType>();
     }
 
-    static std::byte* MakeFrom(const std::byte* data, const Type& type) {
+    static std::byte* MakeFrom(std::byte const* data, Type const& type) {
         std::byte* dest = DoubleType().Allocate();
         MakeFrom(data, type, dest);
 
@@ -37,7 +48,7 @@ public:
     }
 
     // Unlike MakeFrom above does put a converted value in the already allocated memory
-    static void MakeFrom(const std::byte* data, const Type& type, std::byte* dest) {
+    static void MakeFrom(std::byte const* data, Type const& type, std::byte* dest) {
         switch (type.GetTypeId()) {
             case TypeId::kDouble:
                 GetValue(dest) = GetValue(data);
