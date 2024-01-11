@@ -145,6 +145,10 @@ void PFDTane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]]
     count_of_ucc_++;
 }
 
+model::PositionListIndex *PFDTane::GetColumnIndex(unsigned int column) {
+  return relation_->GetColumnData(column).GetPositionListIndex();
+}
+
 unsigned long long PFDTane::ExecuteInternal() {
     max_fd_error_ = max_ucc_error_;
     RelationalSchema const* schema = relation_->GetSchema();

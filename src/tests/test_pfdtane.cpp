@@ -36,12 +36,34 @@ TEST_P(TestPFDTane, DefaultTest) {
   EXPECT_EQ(p.result, algos->GetJsonFDs());
 }
 
+TEST_P(TestPFDTane, PerTupleTest) {
+  auto const &p = GetParam();
+  auto mp = algos::StdParamsMap(p.params);
+  auto algos = algos::CreateAndLoadAlgorithm<algos::PFDTane>(mp);
+
+  std::vector<std::pair<int, int>> cols = {{2, 3}, {4, 5}, {3, 2}, {0, 1},
+                                           {1, 0}, {4, 3}, {1, 5}, {5, 1}};
+  std::vector<double> errors = {0.083333, 0.333333, 0.5,      0.75,
+                                0.0,      0.083333, 0.416666, 0.0};
+  double eps = 0.0001;
+
+  for (std::size_t i = 0; i < cols.size(); i++) {
+    double error = algos->CalculateFdErrorPerTuple(
+        algos->GetColumnIndex(cols[i].first),
+        algos->GetColumnIndex(cols[i].first)
+            ->Intersect(algos->GetColumnIndex(cols[i].second))
+            .get());
+    EXPECT_NEAR(error, errors[i], eps);
+  }
+}
+
 // clang-format off
 INSTANTIATE_TEST_SUITE_P(
         PFDTaneTestSuite, TestPFDTane,
         ::testing::Values(
             PFDTaneParams(R"({"fds": [{"lhs": [1,4], "rhs": 2},{"lhs": [1,4], "rhs": 5},{"lhs": [1], "rhs": 3},{"lhs": [1], "rhs": 4},{"lhs": [2], "rhs": 1},{"lhs": [2], "rhs": 3},{"lhs": [2], "rhs": 4},{"lhs": [2], "rhs": 5},{"lhs": [3], "rhs": 1},{"lhs": [3], "rhs": 2},{"lhs": [3], "rhs": 4},{"lhs": [3], "rhs": 5},{"lhs": [4], "rhs": 1},{"lhs": [4], "rhs": 3},{"lhs": [5], "rhs": 1},{"lhs": [5], "rhs": 2},{"lhs": [5], "rhs": 3},{"lhs": [5], "rhs": 4},{"lhs": [], "rhs": 0}]})", 0.3)
         ));
+
 // clang-format on
 
 } // namespace tests

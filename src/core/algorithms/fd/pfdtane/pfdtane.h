@@ -28,6 +28,8 @@ public:
 
     PFDTane();
 
+    model::PositionListIndex *GetColumnIndex(unsigned int column); // for test
+
     static double CalculateUccError(model::PositionListIndex const* pli,
                                     ColumnLayoutRelationData const* relation_data);
 
