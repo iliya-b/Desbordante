@@ -4,6 +4,7 @@
 
 #include "algorithms/fd/tane/tane.h"
 #include "config/error_measure/type.h"
+#include "enums.h"
 #include "model/table/position_list_index.h"
 #include "model/table/relation_data.h"
 
@@ -20,7 +21,7 @@ public:
     config::ErrorType max_fd_error_;
     config::ErrorType max_ucc_error_;
     config::MaxLhsType max_lhs_;
-    config::ErrorMeasureType error_measure_;
+    ErrorMeasure error_measure_ = ErrorMeasure::_values()[0];
 
     int count_of_fd_ = 0;
     int count_of_ucc_ = 0;

@@ -78,6 +78,7 @@ namespace py = pybind11;
 using PyApriori = PyArAlgorithm<algos::Apriori>;
 // FD mining algorithms
 using PyTane = PyFDAlgorithm<algos::Tane>;
+using PyPFDTane = PyFDAlgorithm<algos::PFDTane>;
 using PyPyro = PyFDAlgorithm<algos::Pyro>;
 using PyFUN = PyFDAlgorithm<algos::FUN>;
 using PyFdMine = PyFDAlgorithm<algos::Fd_mine>;
@@ -264,6 +265,7 @@ PYBIND11_MODULE(desbordante, module) {
     DEFINE_FD_ALGORITHM(HyFD);
     DEFINE_FD_ALGORITHM(Pyro);
     DEFINE_FD_ALGORITHM(Tane);
+    DEFINE_FD_ALGORITHM(PFDTane);
 
     DEFINE_UCC_ALGORITHM(HyUCC);
     DEFINE_UCC_ALGORITHM(PyroUCC);
