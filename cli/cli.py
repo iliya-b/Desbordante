@@ -21,6 +21,7 @@ class Task(StrEnum):
 class Algorithm(StrEnum):
     pyro = auto()
     tane = auto()
+    pfdtane = auto()
     hyfd = auto()
     fd_mine = auto()
     dfd = auto()
@@ -131,7 +132,7 @@ more information about the primitive and the algorithms, refer to the
 “Functional dependency discovery: an experimental evaluation of seven
 algorithms” paper by T. Papenbrock et al.
 
-Algorithms: PYRO, TANE, HYFD, FD_MINE, DFD, DEP_MINER, FDEP, FUN, FASTFDS, AID
+Algorithms: PYRO, TANE, PFDTANE, HYFD, FD_MINE, DFD, DEP_MINER, FDEP, FUN, FASTFDS, AID
 Default: HYFD
 '''
 AFD_HELP = '''Discover minimal non-trivial approximate functional
@@ -139,7 +140,7 @@ dependencies. Approximate functional dependencies are defined in the
 “Efficient Discovery of Approximate Dependencies” paper by S. Kruse and
 F. Naumann.
 
-Algorithms: PYRO, TANE
+Algorithms: PYRO, TANE, PFDTANE
 Default: PYRO
 '''
 FD_VERIFICATION_HELP = '''Verify whether a given exact functional dependency
@@ -175,6 +176,11 @@ TANE_HELP = '''A classic algorithm for discovery of exact and approximate
 functional dependencies. For more information, refer to “TANE : An Efficient
 Algorithm for Discovering Functional and Approximate Dependencies” by
 Y. Huntala et al.
+'''
+PFDTANE_HELP = '''A TANE-based algorithm for discovery of probabilistic
+functional dependencies. For more information, refer to “Functional Dependency
+Generation and Applications in pay-as-you-go data integration systems” by
+Daisy Zhe Wang et al.
 '''
 HYFD_HELP = '''A modern algorithm for discovery of exact functional
 dependencies. One of the most high-performance algorithms for this task. For
@@ -252,6 +258,7 @@ TASK_HELP_PAGES = {
 ALGO_HELP_PAGES = {
     Algorithm.pyro: PYRO_HELP,
     Algorithm.tane: TANE_HELP,
+    Algorithm.pfdtane: PFDTANE_HELP,
     Algorithm.hyfd: HYFD_HELP,
     Algorithm.fd_mine: FD_MINE_HELP,
     Algorithm.dfd: DFD_HELP,
@@ -268,12 +275,12 @@ ALGO_HELP_PAGES = {
 TaskInfo = namedtuple('TaskInfo', ['algos', 'default'])
 
 TASK_INFO = {
-    Task.fd: TaskInfo([Algorithm.pyro, Algorithm.tane, Algorithm.hyfd,
+    Task.fd: TaskInfo([Algorithm.pyro, Algorithm.tane, Algorithm.pfdtane, Algorithm.hyfd,
                        Algorithm.fd_mine, Algorithm.dfd, Algorithm.dep_miner,
                        Algorithm.fdep, Algorithm.fun, Algorithm.fastfds,
                        Algorithm.aid],
                       Algorithm.hyfd),
-    Task.afd: TaskInfo([Algorithm.pyro, Algorithm.tane],
+    Task.afd: TaskInfo([Algorithm.pyro, Algorithm.tane, Algorithm.pfdtane],
                        Algorithm.pyro),
     Task.fd_verification: TaskInfo([Algorithm.naive_fd_verifier],
                                    Algorithm.naive_fd_verifier),
@@ -286,6 +293,7 @@ TASK_INFO = {
 ALGOS = {
     Algorithm.pyro: desbordante.Pyro,
     Algorithm.tane: desbordante.Tane,
+    Algorithm.pfdtane: desbordante.PFDTane,
     Algorithm.hyfd: desbordante.HyFD,
     Algorithm.fd_mine: desbordante.FdMine,
     Algorithm.dfd: desbordante.DFD,

@@ -9,7 +9,11 @@
 
 #include "config/error/option.h"
 #include "config/error_measure/option.h"
+#include "config/error_measure/type.h"
 #include "config/max_lhs/option.h"
+#include "config/names_and_descriptions.h"
+#include "config/option.h"
+#include "enums.h"
 #include "fd/tane/lattice_level.h"
 #include "fd/tane/lattice_vertex.h"
 #include "model/table/column_data.h"
@@ -152,9 +156,10 @@ model::PositionListIndex *PFDTane::GetColumnIndex(unsigned int column) {
 unsigned long long PFDTane::ExecuteInternal() {
     max_fd_error_ = max_ucc_error_;
     RelationalSchema const* schema = relation_->GetSchema();
-    auto calculate_fd_error = error_measure_ == "per_tuple" ? &PFDTane::CalculateFdErrorPerTuple
-                                                            : &PFDTane::CalculateFdErrorPerValue;
-    auto calculate_fd_zero_ary_error = error_measure_ == "per_tuple"
+    auto calculate_fd_error = error_measure_ == +ErrorMeasure::per_tuple
+                                      ? &PFDTane::CalculateFdErrorPerTuple
+                                      : &PFDTane::CalculateFdErrorPerValue;
+    auto calculate_fd_zero_ary_error = error_measure_ == +ErrorMeasure::per_tuple
                                                ? &PFDTane::CalculateZeroAryFdErrorPerTuple
                                                : &PFDTane::CalculateZeroAryFdErrorPerValue;
 
