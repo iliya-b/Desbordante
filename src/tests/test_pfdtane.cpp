@@ -5,6 +5,7 @@
 
 #include "algo_factory.h"
 #include "config/names.h"
+#include "fd/pfdtane/enums.h"
 #include "fd/pfdtane/pfdtane.h"
 #include "table_config.h"
 
@@ -16,12 +17,15 @@ struct PFDTaneParams {
     long double const error = 0.;
     std::string result;
 
-    PFDTaneParams(std::string result, double const error = 0., char const *dataset = "TestFD.csv",
-                  char const separator = ',', bool const has_header = true)
+    PFDTaneParams(std::string result, double const error = 0.,
+                  algos::ErrorMeasure error_measure = +algos::ErrorMeasure::per_tuple,
+                  char const *dataset = "TestFD.csv", char const separator = ',',
+                  bool const has_header = true)
         : params({{onam::kCsvPath, test_data_dir / dataset},
                   {onam::kSeparator, separator},
                   {onam::kHasHeader, has_header},
                   {onam::kError, error},
+                  {onam::kErrorMeasure, error_measure},
                   {onam::kEqualNulls, true}}),
           error(error),
           result(result) {}
@@ -61,7 +65,7 @@ TEST_P(TestPFDTane, PerTupleTest) {
 INSTANTIATE_TEST_SUITE_P(
         PFDTaneTestSuite, TestPFDTane,
         ::testing::Values(
-            PFDTaneParams(R"({"fds": [{"lhs": [1,4], "rhs": 2},{"lhs": [1,4], "rhs": 5},{"lhs": [1], "rhs": 3},{"lhs": [1], "rhs": 4},{"lhs": [2], "rhs": 1},{"lhs": [2], "rhs": 3},{"lhs": [2], "rhs": 4},{"lhs": [2], "rhs": 5},{"lhs": [3], "rhs": 1},{"lhs": [3], "rhs": 2},{"lhs": [3], "rhs": 4},{"lhs": [3], "rhs": 5},{"lhs": [4], "rhs": 1},{"lhs": [4], "rhs": 3},{"lhs": [5], "rhs": 1},{"lhs": [5], "rhs": 2},{"lhs": [5], "rhs": 3},{"lhs": [5], "rhs": 4},{"lhs": [], "rhs": 0}]})", 0.3)
+            PFDTaneParams(R"({"fds": [{"lhs": [1,4], "rhs": 2},{"lhs": [1,4], "rhs": 5},{"lhs": [1], "rhs": 3},{"lhs": [1], "rhs": 4},{"lhs": [2], "rhs": 1},{"lhs": [2], "rhs": 3},{"lhs": [2], "rhs": 4},{"lhs": [2], "rhs": 5},{"lhs": [3], "rhs": 1},{"lhs": [3], "rhs": 2},{"lhs": [3], "rhs": 4},{"lhs": [3], "rhs": 5},{"lhs": [4], "rhs": 1},{"lhs": [4], "rhs": 3},{"lhs": [5], "rhs": 1},{"lhs": [5], "rhs": 2},{"lhs": [5], "rhs": 3},{"lhs": [5], "rhs": 4},{"lhs": [], "rhs": 0}]})", 0.3, +algos::ErrorMeasure::per_value)
         ));
 
 // clang-format on
