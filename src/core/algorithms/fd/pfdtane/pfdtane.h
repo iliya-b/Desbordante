@@ -2,38 +2,35 @@
 
 #include <string>
 
-#include "algorithms/fd/pli_based_fd_algorithm.h"
-#include "config/error/type.h"
-#include "config/max_lhs/type.h"
+#include "algorithms/fd/tane/tane.h"
+#include "config/error_measure/type.h"
+#include "enums.h"
 #include "model/table/position_list_index.h"
 #include "model/table/relation_data.h"
 
 namespace algos {
 
-class Tane : public PliBasedFDAlgorithm {
+class PFDTane : public PliBasedFDAlgorithm {
 private:
+    void ResetStateFd() final;
     void RegisterOptions();
     void MakeExecuteOptsAvailable() final;
-
-    void ResetStateFd() final;
-    unsigned long long ExecuteInternal() final;
+    unsigned long long ExecuteInternal() override final;
 
 public:
     config::ErrorType max_fd_error_;
     config::ErrorType max_ucc_error_;
     config::MaxLhsType max_lhs_;
+    ErrorMeasure error_measure_ = ErrorMeasure::_values()[0];
 
     int count_of_fd_ = 0;
     int count_of_ucc_ = 0;
     long apriori_millis_ = 0;
 
-    Tane();
+    PFDTane();
 
-    static double CalculateZeroAryFdError(ColumnData const* rhs,
-                                          ColumnLayoutRelationData const* relation_data);
-    static double CalculateFdError(model::PositionListIndex const* lhs_pli,
-                                   model::PositionListIndex const* joint_pli,
-                                   ColumnLayoutRelationData const* relation_data);
+    model::PositionListIndex* GetColumnIndex(unsigned int column);  // for test
+
     static double CalculateUccError(model::PositionListIndex const* pli,
                                     ColumnLayoutRelationData const* relation_data);
 
@@ -44,6 +41,13 @@ public:
     // void RegisterFd(Vertical const* lhs, Column const* rhs, double error, RelationalSchema const*
     // schema);
     void RegisterUcc(Vertical const& key, double error, RelationalSchema const* schema);
+
+    double CalculateZeroAryFdErrorPerValue(ColumnData const* rhs);
+    double CalculateFdErrorPerValue(model::PositionListIndex const* x_pli,
+                                    model::PositionListIndex const* xa_pli);
+    double CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs);
+    double CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
+                                    model::PositionListIndex const* xa_pli);
 };
 
 }  // namespace algos
