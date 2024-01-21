@@ -44,6 +44,7 @@ TEST_P(TestPFDTane, DefaultTest) {
 TEST_P(TestPFDTane, PerTupleTest) {
     auto const &p = GetParam();
     auto mp = algos::StdParamsMap(p.params);
+    mp[onam::kErrorMeasure] = +algos::ErrorMeasure::per_tuple;
     auto algos = algos::CreateAndLoadAlgorithm<algos::PFDTane>(mp);
 
     std::vector<std::pair<int, int>> cols = {{2, 3}, {4, 5}, {3, 2}, {0, 1},
@@ -53,6 +54,27 @@ TEST_P(TestPFDTane, PerTupleTest) {
 
     for (std::size_t i = 0; i < cols.size(); i++) {
         double error = algos->CalculateFdErrorPerTuple(
+                algos->GetColumnIndex(cols[i].first),
+                algos->GetColumnIndex(cols[i].first)
+                        ->Intersect(algos->GetColumnIndex(cols[i].second))
+                        .get());
+        EXPECT_NEAR(error, errors[i], eps);
+    }
+}
+
+TEST_P(TestPFDTane, PerValueTest) {
+    auto const &p = GetParam();
+    auto mp = algos::StdParamsMap(p.params);
+    mp[onam::kErrorMeasure] = +algos::ErrorMeasure::per_value;
+    auto algos = algos::CreateAndLoadAlgorithm<algos::PFDTane>(mp);
+
+    std::vector<std::pair<int, int>> cols = {{2, 3}, {4, 5}, {3, 2}, {0, 1},
+                                             {1, 0}, {4, 3}, {1, 5}, {5, 1}};
+    std::vector<double> errors = {0.0625, 0.333333, 0.291666, 0.75, 0.0, 0.099999, 0.416666, 0.0};
+    double eps = 0.0001;
+
+    for (std::size_t i = 0; i < cols.size(); i++) {
+        double error = algos->CalculateFdErrorPerValue(
                 algos->GetColumnIndex(cols[i].first),
                 algos->GetColumnIndex(cols[i].first)
                         ->Intersect(algos->GetColumnIndex(cols[i].second))
