@@ -9,7 +9,7 @@ namespace algos {
 using AlgorithmTypes =
         std::tuple<Depminer, DFD, FastFDs, FDep, Fd_mine, Pyro, Tane, FUN, hyfd::HyFD, Aid, Apriori,
                    metric::MetricVerifier, DataStats, fd_verifier::FDVerifier, HyUCC, PyroUCC,
-                   cfd::FDFirstAlgorithm, ACAlgorithm, UCCVerifier, Faida>;
+                   cfd::FDFirstAlgorithm, ACAlgorithm, UCCVerifier, Faida, PFDTane>;
 
 // clang-format off
 /* Enumeration of all supported non-pipeline algorithms. If you implement a new
@@ -27,6 +27,7 @@ BETTER_ENUM(AlgorithmType, char,
     fdmine,
     pyro,
     tane,
+    pfdtane,
     fun,
     hyfd,
     aidfd,

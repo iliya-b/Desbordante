@@ -1,4 +1,4 @@
-#include "tane.h"
+#include "pfdtane.h"
 
 #include <chrono>
 #include <iomanip>
@@ -8,63 +8,138 @@
 #include <easylogging++.h>
 
 #include "config/error/option.h"
+#include "config/error_measure/option.h"
+#include "config/error_measure/type.h"
 #include "config/max_lhs/option.h"
-#include "lattice_level.h"
-#include "lattice_vertex.h"
+#include "config/names_and_descriptions.h"
+#include "config/option.h"
+#include "enums.h"
+#include "fd/tane/lattice_level.h"
+#include "fd/tane/lattice_vertex.h"
 #include "model/table/column_data.h"
 #include "model/table/column_layout_relation_data.h"
 #include "model/table/relational_schema.h"
 
 namespace algos {
-
 using boost::dynamic_bitset;
 
-Tane::Tane() : PliBasedFDAlgorithm({kDefaultPhaseName}) {
+PFDTane::PFDTane() : algos::PliBasedFDAlgorithm({kDefaultPhaseName}) {
     RegisterOptions();
 }
 
-void Tane::RegisterOptions() {
+double PFDTane::CalculateZeroAryFdErrorPerValue(ColumnData const* rhs) {
+    size_t max = 1;
+    model::PositionListIndex const* x_index = rhs->GetPositionListIndex();
+    for (model::PositionListIndex::Cluster const& x_cluster : x_index->GetIndex()) {
+        max = std::max(max, x_cluster.size());
+    }
+    return 1.0 - static_cast<double>(max) / x_index->getRelationSize();
+}
+
+double PFDTane::CalculateFdErrorPerValue(model::PositionListIndex const* x_pli,
+                                         model::PositionListIndex const* xa_pli) {
+    auto xa_index = xa_pli->GetIndex();
+    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
+    std::sort(xa_index.begin(), xa_index.end(),
+              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
+                  return probing_table->at(a[0]) < probing_table->at(b[0]);
+              });
+    double sum = 0.0;
+    std::size_t cluster_rows_count = 0;
+    std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
+    auto xa_cluster_it = xa_index.begin();
+
+    for (model::PositionListIndex::Cluster const& x_cluster : x_index) {
+        std::size_t max = 1;
+        for (int x_row : x_cluster) {
+            if (xa_cluster_it == xa_index.end()) {
+                break;
+            }
+            if (x_row == xa_cluster_it->at(0)) {
+                max = std::max(max, xa_cluster_it->size());
+                xa_cluster_it++;
+            }
+        }
+        sum += static_cast<double>(max) / x_cluster.size();
+        cluster_rows_count += x_cluster.size();
+    }
+    auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
+    return 1.0 - (sum + unique_rows) / (x_index.size() + unique_rows);
+}
+
+double PFDTane::CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs) {
+    size_t max = 1;
+    model::PositionListIndex const* x_index = rhs->GetPositionListIndex();
+    for (model::PositionListIndex::Cluster const& x_cluster : x_index->GetIndex()) {
+        max = std::max(max, x_cluster.size());
+    }
+    return 1.0 - static_cast<double>(max) / x_index->getRelationSize();
+}
+
+double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
+                                         model::PositionListIndex const* xa_pli) {
+    auto xa_index = xa_pli->GetIndex();
+    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
+    std::sort(xa_index.begin(), xa_index.end(),
+              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
+                  return probing_table->at(a[0]) < probing_table->at(b[0]);
+              });
+
+    std::size_t sum = 0;
+    std::size_t cluster_rows_count = 0;
+    std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
+    auto xa_cluster_it = xa_index.begin();
+
+    for (model::PositionListIndex::Cluster const& x_cluster : x_index) {
+        std::size_t max = 1;
+        for (int x_row : x_cluster) {
+            if (xa_cluster_it == xa_index.end()) {
+                break;
+            }
+            if (x_row == xa_cluster_it->at(0)) {
+                max = std::max(max, xa_cluster_it->size());
+                xa_cluster_it++;
+            }
+        }
+        sum += max;
+        cluster_rows_count += x_cluster.size();
+    }
+    auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
+    return 1.0 - static_cast<double>(sum + unique_rows) / x_pli->getRelationSize();
+}
+
+void PFDTane::RegisterOptions() {
     RegisterOption(config::ErrorOpt(&max_ucc_error_));
+    RegisterOption(config::ErrorMeasureOpt(&error_measure_));
     RegisterOption(config::MaxLhsOpt(&max_lhs_));
 }
 
-void Tane::MakeExecuteOptsAvailable() {
-    MakeOptionsAvailable({config::MaxLhsOpt.GetName(), config::ErrorOpt.GetName()});
+void PFDTane::MakeExecuteOptsAvailable() {
+    MakeOptionsAvailable({config::MaxLhsOpt.GetName(), config::ErrorOpt.GetName(),
+                          config::ErrorMeasureOpt.GetName()});
 }
 
-void Tane::ResetStateFd() {
+void PFDTane::ResetStateFd() {
     count_of_fd_ = 0;
     count_of_ucc_ = 0;
     apriori_millis_ = 0;
 }
 
-double Tane::CalculateZeroAryFdError(ColumnData const* rhs,
-                                     ColumnLayoutRelationData const* relation_data) {
-    return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
-                       static_cast<double>(relation_data->GetNumTuplePairs());
-}
-
-double Tane::CalculateFdError(model::PositionListIndex const* lhs_pli,
-                              model::PositionListIndex const* joint_pli,
-                              ColumnLayoutRelationData const* relation_data) {
-    return (double)(lhs_pli->GetNepAsLong() - joint_pli->GetNepAsLong()) /
-           static_cast<double>(relation_data->GetNumTuplePairs());
-}
-
-double Tane::CalculateUccError(model::PositionListIndex const* pli,
-                               ColumnLayoutRelationData const* relation_data) {
+double PFDTane::CalculateUccError(model::PositionListIndex const* pli,
+                                  ColumnLayoutRelationData const* relation_data) {
     return pli->GetNepAsLong() / static_cast<double>(relation_data->GetNumTuplePairs());
 }
 
-void Tane::RegisterAndCountFd(Vertical const& lhs, Column const* rhs, [[maybe_unused]] double error,
-                              [[maybe_unused]] RelationalSchema const* schema) {
+void PFDTane::RegisterAndCountFd(Vertical const& lhs, Column const* rhs,
+                                 [[maybe_unused]] double error,
+                                 [[maybe_unused]] RelationalSchema const* schema) {
     dynamic_bitset<> lhs_bitset = lhs.GetColumnIndices();
     PliBasedFDAlgorithm::RegisterFd(lhs, *rhs);
     count_of_fd_++;
 }
 
-void Tane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] double error,
-                       [[maybe_unused]] RelationalSchema const* schema) {
+void PFDTane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] double error,
+                          [[maybe_unused]] RelationalSchema const* schema) {
     /*dynamic_bitset<> key_bitset = key.getColumnIndices();
     LOG(INFO) << "Discovered UCC: ";
     for (int i = key_bitset.find_first(); i != -1; i = key_bitset.find_next(i)) {
@@ -74,9 +149,19 @@ void Tane::RegisterUcc([[maybe_unused]] Vertical const& key, [[maybe_unused]] do
     count_of_ucc_++;
 }
 
-unsigned long long Tane::ExecuteInternal() {
+model::PositionListIndex* PFDTane::GetColumnIndex(unsigned int column) {
+    return relation_->GetColumnData(column).GetPositionListIndex();
+}
+
+unsigned long long PFDTane::ExecuteInternal() {
     max_fd_error_ = max_ucc_error_;
     RelationalSchema const* schema = relation_->GetSchema();
+    auto calculate_fd_error = error_measure_ == +ErrorMeasure::per_tuple
+                                      ? &PFDTane::CalculateFdErrorPerTuple
+                                      : &PFDTane::CalculateFdErrorPerValue;
+    auto calculate_fd_zero_ary_error = error_measure_ == +ErrorMeasure::per_tuple
+                                               ? &PFDTane::CalculateZeroAryFdErrorPerTuple
+                                               : &PFDTane::CalculateZeroAryFdErrorPerValue;
 
     LOG(INFO) << schema->GetName() << " has " << relation_->GetNumColumns() << " columns, "
               << relation_->GetNumRows() << " rows, and a maximum NIP of " << std::setw(2)
@@ -116,7 +201,7 @@ unsigned long long Tane::ExecuteInternal() {
         vertex->SetPositionListIndex(column_data.GetPositionListIndex());
 
         // check FDs: 0->A
-        double fd_error = CalculateZeroAryFdError(&column_data, relation_.get());
+        double fd_error = (this->*calculate_fd_zero_ary_error)(&column_data);
         if (fd_error <= max_fd_error_) {  // TODO: max_error
             zeroary_fd_rhs.set(column->GetIndex());
             RegisterAndCountFd(*schema->empty_vertical_, column.get(), fd_error, schema);
@@ -193,7 +278,7 @@ unsigned long long Tane::ExecuteInternal() {
 
             dynamic_bitset<> xa_indices = xa.GetColumnIndices();
             dynamic_bitset<> a_candidates = xa_vertex->GetRhsCandidates();
-
+            auto xa_pli = xa_vertex->GetPositionListIndex();
             for (auto const& x_vertex : xa_vertex->GetParents()) {
                 Vertical const& lhs = x_vertex->GetVertical();
 
@@ -208,10 +293,10 @@ unsigned long long Tane::ExecuteInternal() {
                 if (!a_candidates[a_index]) {
                     continue;
                 }
+                auto x_pli = x_vertex->GetPositionListIndex();
 
                 // Check X -> A
-                double error = CalculateFdError(x_vertex->GetPositionListIndex(),
-                                                xa_vertex->GetPositionListIndex(), relation_.get());
+                double error = (this->*calculate_fd_error)(x_pli, xa_pli);
                 if (error <= max_fd_error_) {
                     Column const* rhs = schema->GetColumns()[a_index].get();
 
@@ -305,6 +390,7 @@ unsigned long long Tane::ExecuteInternal() {
     LOG(INFO) << "Total FD count: " << count_of_fd_;
     LOG(INFO) << "Total UCC count: " << count_of_ucc_;
     LOG(INFO) << "HASH: " << Fletcher16();
+    LOG(INFO) << "data: " << GetJsonFDs();
 
     return apriori_millis_;
 }
