@@ -13,6 +13,7 @@ import desbordante
 class Task(StrEnum):
     fd = auto()
     afd = auto()
+    pfd = auto()
     fd_verification = auto()
     afd_verification = auto()
     mfd_verification = auto()
@@ -21,6 +22,7 @@ class Task(StrEnum):
 class Algorithm(StrEnum):
     pyro = auto()
     tane = auto()
+    pfdtane = auto()
     hyfd = auto()
     fd_mine = auto()
     dfd = auto()
@@ -142,6 +144,12 @@ F. Naumann.
 Algorithms: PYRO, TANE
 Default: PYRO
 '''
+PFD_HELP = '''Discover minimal non-trivial probabilistic functional
+dependencies.
+
+Algorithms: PFDTANE
+Default: PFDTANE
+'''
 FD_VERIFICATION_HELP = '''Verify whether a given exact functional dependency
 holds on the specified dataset. For more information about the primitive and
 algorithms, refer to the “Functional dependency discovery: an experimental
@@ -175,6 +183,11 @@ TANE_HELP = '''A classic algorithm for discovery of exact and approximate
 functional dependencies. For more information, refer to “TANE : An Efficient
 Algorithm for Discovering Functional and Approximate Dependencies” by
 Y. Huntala et al.
+'''
+PFDTANE_HELP = '''A TANE-based algorithm for discovery of probabilistic
+functional dependencies. For more information, refer to “Functional Dependency
+Generation and Applications in pay-as-you-go data integration systems” by
+Daisy Zhe Wang et al.
 '''
 HYFD_HELP = '''A modern algorithm for discovery of exact functional
 dependencies. One of the most high-performance algorithms for this task. For
@@ -244,6 +257,7 @@ OPTION_TYPES = {
 TASK_HELP_PAGES = {
     Task.fd: FD_HELP,
     Task.afd: AFD_HELP,
+    Task.pfd: PFD_HELP,
     Task.fd_verification: FD_VERIFICATION_HELP,
     Task.afd_verification: AFD_VERIFICATION_HELP,
     Task.mfd_verification: MFD_VERIFICATION_HELP
@@ -252,6 +266,7 @@ TASK_HELP_PAGES = {
 ALGO_HELP_PAGES = {
     Algorithm.pyro: PYRO_HELP,
     Algorithm.tane: TANE_HELP,
+    Algorithm.pfdtane: PFDTANE_HELP,
     Algorithm.hyfd: HYFD_HELP,
     Algorithm.fd_mine: FD_MINE_HELP,
     Algorithm.dfd: DFD_HELP,
@@ -275,6 +290,7 @@ TASK_INFO = {
                       Algorithm.hyfd),
     Task.afd: TaskInfo([Algorithm.pyro, Algorithm.tane],
                        Algorithm.pyro),
+    Task.pfd: TaskInfo([Algorithm.pfdtane], Algorithm.pfdtane),
     Task.fd_verification: TaskInfo([Algorithm.naive_fd_verifier],
                                    Algorithm.naive_fd_verifier),
     Task.afd_verification: TaskInfo([Algorithm.naive_afd_verifier],
@@ -286,6 +302,7 @@ TASK_INFO = {
 ALGOS = {
     Algorithm.pyro: desbordante.Pyro,
     Algorithm.tane: desbordante.Tane,
+    Algorithm.pfdtane: desbordante.PFDTane,
     Algorithm.hyfd: desbordante.HyFD,
     Algorithm.fd_mine: desbordante.FdMine,
     Algorithm.dfd: desbordante.DFD,
