@@ -27,6 +27,17 @@ PFDTane::PFDTane() : algos::PliBasedFDAlgorithm({kDefaultPhaseName}) {
     RegisterOptions();
 }
 
+double PFDTane::CalculateZeroAryG1(ColumnData const* rhs) {
+    return 1 - rhs->GetPositionListIndex()->GetNepAsLong() /
+                       static_cast<double>(relation_->GetNumTuplePairs());
+}
+
+double PFDTane::CalculateG1(model::PositionListIndex const* x_pli,
+                            model::PositionListIndex const* xa_pli) {
+    return (double)(x_pli->GetNepAsLong() - xa_pli->GetNepAsLong()) /
+           static_cast<double>(relation_->GetNumTuplePairs());
+}
+
 double PFDTane::CalculateZeroAryFdErrorPerValue(ColumnData const* rhs) {
     size_t max = 1;
     model::PositionListIndex const* x_index = rhs->GetPositionListIndex();
@@ -38,33 +49,29 @@ double PFDTane::CalculateZeroAryFdErrorPerValue(ColumnData const* rhs) {
 
 double PFDTane::CalculateFdErrorPerValue(model::PositionListIndex const* x_pli,
                                          model::PositionListIndex const* xa_pli) {
+    static std::vector<unsigned int> T(x_pli->getRelationSize());
     auto xa_index = xa_pli->GetIndex();
-    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
-    std::sort(xa_index.begin(), xa_index.end(),
-              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
-                  return probing_table->at(a[0]) < probing_table->at(b[0]);
-              });
-    double sum = 0.0;
-    std::size_t cluster_rows_count = 0;
     std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
-    auto xa_cluster_it = xa_index.begin();
+    unsigned int cluster_rows = 0;
+    double error = 0.0;
+    for (model::PositionListIndex::Cluster const& xa_cluster : xa_index) {
+        T[xa_cluster[0]] = xa_cluster.size();
+    }
 
     for (model::PositionListIndex::Cluster const& x_cluster : x_index) {
-        std::size_t max = 1;
-        for (int x_row : x_cluster) {
-            if (xa_cluster_it == xa_index.end()) {
-                break;
-            }
-            if (x_row == xa_cluster_it->at(0)) {
-                max = std::max(max, xa_cluster_it->size());
-                xa_cluster_it++;
-            }
+        unsigned int m = 1;
+        cluster_rows += x_cluster.size();
+        for (auto t : x_cluster) {
+            m = std::max(m, T[t]);
         }
-        sum += static_cast<double>(max) / x_cluster.size();
-        cluster_rows_count += x_cluster.size();
+        error += static_cast<double>(m) / x_cluster.size();
     }
-    auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
-    return 1.0 - (sum + unique_rows) / (x_index.size() + unique_rows);
+
+    for (model::PositionListIndex::Cluster const& xa_cluster : xa_index) {
+        T[xa_cluster[0]] = 0;
+    }
+    unsigned int unique_rows = x_pli->getRelationSize() - cluster_rows;
+    return 1.0 - (error + unique_rows) / (x_index.size() + unique_rows);
 }
 
 double PFDTane::CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs) {
@@ -78,34 +85,28 @@ double PFDTane::CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs) {
 
 double PFDTane::CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
                                          model::PositionListIndex const* xa_pli) {
+    static std::vector<unsigned int> T(x_pli->getRelationSize());
     auto xa_index = xa_pli->GetIndex();
-    std::shared_ptr<const std::vector<int>> probing_table = x_pli->CalculateAndGetProbingTable();
-    std::sort(xa_index.begin(), xa_index.end(),
-              [&probing_table](std::vector<int> const& a, std::vector<int> const& b) {
-                  return probing_table->at(a[0]) < probing_table->at(b[0]);
-              });
-
-    std::size_t sum = 0;
-    std::size_t cluster_rows_count = 0;
     std::deque<model::PositionListIndex::Cluster> const& x_index = x_pli->GetIndex();
-    auto xa_cluster_it = xa_index.begin();
+
+    unsigned int violations = 0;
+    for (model::PositionListIndex::Cluster const& xa_cluster : xa_index) {
+        T[xa_cluster[0]] = xa_cluster.size();
+    }
 
     for (model::PositionListIndex::Cluster const& x_cluster : x_index) {
-        std::size_t max = 1;
-        for (int x_row : x_cluster) {
-            if (xa_cluster_it == xa_index.end()) {
-                break;
-            }
-            if (x_row == xa_cluster_it->at(0)) {
-                max = std::max(max, xa_cluster_it->size());
-                xa_cluster_it++;
-            }
+        unsigned int m = 1;
+        for (auto t : x_cluster) {
+            m = std::max(m, T[t]);
         }
-        sum += max;
-        cluster_rows_count += x_cluster.size();
+        violations += x_cluster.size() - m;
     }
-    auto unique_rows = static_cast<unsigned int>(x_pli->getRelationSize() - cluster_rows_count);
-    return 1.0 - static_cast<double>(sum + unique_rows) / x_pli->getRelationSize();
+
+    for (model::PositionListIndex::Cluster const& xa_cluster : xa_index) {
+        T[xa_cluster[0]] = 0;
+    }
+
+    return static_cast<double>(violations) / x_pli->getRelationSize();
 }
 
 void PFDTane::RegisterOptions() {
@@ -162,6 +163,10 @@ unsigned long long PFDTane::ExecuteInternal() {
     auto calculate_fd_zero_ary_error = error_measure_ == +ErrorMeasure::per_tuple
                                                ? &PFDTane::CalculateZeroAryFdErrorPerTuple
                                                : &PFDTane::CalculateZeroAryFdErrorPerValue;
+    if (max_fd_error_ == 0) {
+        calculate_fd_error = &PFDTane::CalculateG1;
+        calculate_fd_zero_ary_error = &PFDTane::CalculateZeroAryG1;
+    }
 
     LOG(INFO) << schema->GetName() << " has " << relation_->GetNumColumns() << " columns, "
               << relation_->GetNumRows() << " rows, and a maximum NIP of " << std::setw(2)

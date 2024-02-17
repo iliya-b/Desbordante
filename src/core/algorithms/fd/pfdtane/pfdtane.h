@@ -48,6 +48,9 @@ public:
     double CalculateZeroAryFdErrorPerTuple(ColumnData const* rhs);
     double CalculateFdErrorPerTuple(model::PositionListIndex const* x_pli,
                                     model::PositionListIndex const* xa_pli);
+    double CalculateZeroAryG1(ColumnData const* rhs);
+    double CalculateG1(model::PositionListIndex const* x_pli,
+                       model::PositionListIndex const* xa_pli);
 };
 
 }  // namespace algos
