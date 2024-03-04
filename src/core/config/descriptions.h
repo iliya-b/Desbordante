@@ -19,6 +19,7 @@ constexpr auto kDThreads =
         "number of threads to use. If 0, then as many threads are used as the "
         "hardware can handle concurrently.";
 constexpr auto kDError = "error threshold value for Approximate FD algorithms";
+constexpr auto kDErrorMeasure = "error measure for Probabilistic FD algorithms (per_value or per_tuple)";
 constexpr auto kDMaximumLhs = "max considered LHS size";
 constexpr auto kDSeed = "RNG seed";
 constexpr auto kDMinimumSupport = "minimum support value (between 0 and 1)";
