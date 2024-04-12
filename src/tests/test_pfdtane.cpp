@@ -66,10 +66,10 @@ INSTANTIATE_TEST_SUITE_P(
         PFDTaneTestMiningSuite, TestPFDTaneMining,
         ::testing::Values(
             PFDTaneMiningParams(44381, 0.3, +algos::ErrorMeasure::per_value, kTestFD),
-            PFDTaneMiningParams(39491, 0.1, +algos::ErrorMeasure::per_value, kiris),
-            PFDTaneMiningParams(10695, 0.01, +algos::ErrorMeasure::per_value, kiris),
-            PFDTaneMiningParams(7893, 0.1, +algos::ErrorMeasure::per_value, kneighbors10k),
-            PFDTaneMiningParams(41837, 0.01, +algos::ErrorMeasure::per_value, kneighbors10k)
+            PFDTaneMiningParams(39491, 0.1, +algos::ErrorMeasure::per_value, kIris),
+            PFDTaneMiningParams(10695, 0.01, +algos::ErrorMeasure::per_value, kIris),
+            PFDTaneMiningParams(7893, 0.1, +algos::ErrorMeasure::per_value, kNeighbors10k),
+            PFDTaneMiningParams(41837, 0.01, +algos::ErrorMeasure::per_value, kNeighbors10k)
         ));
 
 INSTANTIATE_TEST_SUITE_P(

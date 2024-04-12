@@ -4,18 +4,24 @@
 #include <iomanip>
 #include <list>
 #include <memory>
+#include <queue>
 
+#include <boost/algorithm/string/join.hpp>
+#include <boost/dynamic_bitset/dynamic_bitset.hpp>
+#include <boost/range/join.hpp>
 #include <easylogging++.h>
 
 #include "config/error/option.h"
 #include "config/error_measure/option.h"
 #include "config/max_lhs/option.h"
 #include "enums.h"
+#include "error/type.h"
 #include "fd/tane/lattice_level.h"
 #include "fd/tane/lattice_vertex.h"
 #include "model/table/column_data.h"
 #include "model/table/column_layout_relation_data.h"
 #include "model/table/relational_schema.h"
+#include "table/column.h"
 
 namespace algos {
 using boost::dynamic_bitset;
@@ -90,6 +96,56 @@ void PFDTane::RegisterOptions() {
 void PFDTane::MakeExecuteOptsAvailable() {
     MakeOptionsAvailable({config::kErrorOpt.GetName(), config::kErrorMeasureOpt.GetName(),
                           config::kMaxLhsOpt.GetName()});
+}
+
+// recalculate probability of FDs (with one-attribute LHS)
+void PFDTane::Recalculate() {
+    config::ErrorType t1 = 0.0;
+    config::ErrorType t2 = 0.0;
+    // meanwhile t1 < 1 - max_fd_error_ < t2
+    // we keep those FDs with probability > t2
+    // we remove those FDs with probability < t1
+    // we recalculate probability of the rest
+    // and keep those with probability >= 1 - max_fd_error_
+
+    std::list<FD> list = FdList(); // todo: remove non 1-LHS and add inferrable 1-LHS
+    unsigned long fds_count = static_cast<unsigned long>(list.size());
+    unsigned long subsets_count = std::pow(2L, fds_count - 1);
+    for(FD& fd : list){
+    
+        config::ErrorType probability = 1 - 0.0; // TODO: use actual pFD probaility
+        if(probability < t1 || probability > t2) continue;
+        if(fd.GetLhsIndices().size() > 1) continue; // we support FDs with one-attribute LHS
+        if(fd.GetLhsIndices().size() == 0) {
+            // todo: spread them before the loop
+        }
+
+        // enumerate all subsets of FDs
+        auto subset = boost::dynamic_bitset<>(list.size());
+        for (std::size_t i = 0; i < subsets_count; i++){
+            // todo: prepare subset
+
+            // let current fd be: A->B
+            // let subset be a set of FDs represented by a directed clustered graph
+            // 1. Calculate P(subset)
+            // 1.1. Check transitivity of the whole set  
+            // 1.1.1. Calculate the transitive closure of the graph
+            // 1.1.2. Check if the transitive clousure is a subgraph of the original graph
+            // 1.2. Calculate P(subset) as product of computed probabilities for other FDs
+            // 2. Calculate P(fd|subset)
+            // 2.1. Check existence of C s.t. there are A -> C and C -> B
+            // 2.2. Check existence of B -> C and non-existence of A -> C
+            // 2.3. Check existence of C -> A and non-existence of C -> B
+            // 2.4. Calculate using Bayes rule
+            // 2.4.1. Find all C s.t. there are both A->C and B->C 
+            // 2.4.2. Find all C s.t. there are both C->A and C->B 
+            // 2.4.3. Calculate using apriori probabilities
+        }
+
+        // iterate unless converges
+
+
+    }
 }
 
 }  // namespace algos

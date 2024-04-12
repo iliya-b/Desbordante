@@ -140,6 +140,7 @@ void TaneCommon::ComputeDependencies(model::LatticeLevel* level) {
     }
 }
 
+
 unsigned long long TaneCommon::ExecuteInternal() {
     long apriori_millis = 0;
     max_fd_error_ = max_ucc_error_;

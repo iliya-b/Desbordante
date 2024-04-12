@@ -21,8 +21,10 @@ private:
     config::ErrorType CalculateFdError(model::PositionListIndex const* lhs_pli,
                                        model::PositionListIndex const* joint_pli) override;
 
+
 public:
     PFDTane();
+    void Recalculate();
     static config::ErrorType CalculateZeroAryFdError(ColumnData const* rhs,
                                                      ColumnLayoutRelationData const* relation_data);
     static config::ErrorType CalculateFdError(model::PositionListIndex const* x_pli,
