@@ -22,11 +22,15 @@ jobs:
           fetch-depth: 0
       - name: Pull clang-format
         run: |
+          sudo add-apt-repository 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main'
+          wget https://apt.llvm.org/llvm-snapshot.gpg.key
+          sudo apt-key add llvm-snapshot.gpg.key
           sudo apt-get update
-          sudo apt-get install -y clang-format-14
+          sudo apt-get install -y clang-format-18
       - name: Check formatting
         run: |
-          formatterOutput=$( git diff -U0 origin/$GITHUB_BASE_REF...HEAD | clang-format-diff-14 -p 1)
+          set +e
+          formatterOutput=$( git diff -U0 origin/$GITHUB_BASE_REF...HEAD | clang-format-diff-18 -p 1)
 
           if [ "$formatterOutput" != "" ]
           then
@@ -60,7 +64,7 @@ jobs:
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             . -B ${{github.workspace}}/build
 
-      - uses: ZedThree/clang-tidy-review@v0.14.0
+      - uses: ZedThree/clang-tidy-review@v0.19.0
         id: review
         with:
           apt_packages: libboost-dev
@@ -68,7 +72,7 @@ jobs:
           config_file: '.clang-tidy'
           split_workflow: true
 
-      - uses: ZedThree/clang-tidy-review/upload@v0.14.0
+      - uses: ZedThree/clang-tidy-review/upload@v0.19.0
 
       - name: Fail the check if clang-tidy reported issues
         if: steps.review.outputs.total_comments > 0
