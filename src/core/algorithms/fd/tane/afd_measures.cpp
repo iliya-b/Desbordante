@@ -1,4 +1,6 @@
 #include "afd_measures.h"
+#include <cmath>
+#include <iostream>
 
 namespace algos {
 using Cluster = model::PositionListIndex::Cluster;
@@ -66,6 +68,64 @@ config::ErrorType CalculatePdepMeasure(model::PositionListIndex const* x_pli,
         }
     }
     return (sum / static_cast<config::ErrorType>(n));
+}
+
+
+config::ErrorType CalculateFIMeasure(model::PositionListIndex const* x_pli,
+                                      model::PositionListIndex const* a_pli,
+                                      model::PositionListIndex const* xa_pli) {
+    std::deque<Cluster> xa_index = xa_pli->GetIndex();
+    std::deque<Cluster> a_index = a_pli->GetIndex();
+    std::deque<Cluster> x_index = x_pli->GetIndex();
+
+
+    std::shared_ptr<Cluster const> probing_table_ptr = x_pli->CalculateAndGetProbingTable();
+    auto const& probing_table = *probing_table_ptr;
+    std::stable_sort(xa_index.begin(), xa_index.end(),
+              [&probing_table](Cluster const& a, Cluster const& b) {
+                  return probing_table[a.front()] < probing_table[b.front()];
+              });
+
+    unsigned int n = x_pli->GetRelationSize();
+    double H_Y = 0.0;
+
+    unsigned int y_unique_rows_count = n;
+
+    for(Cluster const& a_cluster : a_index) {
+        double probability = static_cast<double>(a_cluster.size()) / n;
+        H_Y -= probability * std::log2(probability);
+        y_unique_rows_count -= a_cluster.size();
+    }
+    
+    double probability = 1.0 / n;
+    H_Y -= y_unique_rows_count * probability * (std::log2(probability));
+
+    double H_Y_X = 0.0;
+    auto xa_cluster_it = xa_index.begin();
+    for (Cluster const& x_cluster : x_index) {
+        unsigned int unique_rows_count = x_cluster.size();
+        double y_x_entropy = 0.0;
+
+        for (int x_row : x_cluster) {
+            if (xa_cluster_it == xa_index.end()) {
+                break;
+            }
+            auto const& xa_cluster = *xa_cluster_it;
+            if (x_row == xa_cluster[0]) {
+                unique_rows_count -= xa_cluster.size();
+                double probability = static_cast<double>(xa_cluster.size()) / x_cluster.size();
+                y_x_entropy -= probability * std::log2(probability);
+                xa_cluster_it++;
+            }
+        }
+
+        double probability = 1.0 / x_cluster.size();
+        y_x_entropy -= unique_rows_count * probability * (std::log2(probability));
+
+        double x_probability = static_cast<double>(x_cluster.size()) / n;
+        H_Y_X += x_probability * y_x_entropy;
+    }
+    return std::min(1.0, (H_Y - H_Y_X) / H_Y);
 }
 
 config::ErrorType CalculateTauMeasure(model::PositionListIndex const* x_pli,

@@ -16,6 +16,10 @@ config::ErrorType PdepSelf(model::PositionListIndex const* x_pli);
 config::ErrorType CalculatePdepMeasure(model::PositionListIndex const* x_pli,
                                        model::PositionListIndex const* xa_pli);
 
+config::ErrorType CalculateFIMeasure(model::PositionListIndex const* x_pli,
+                                      model::PositionListIndex const* a_pli,
+                                      model::PositionListIndex const* xa_pli);
+
 config::ErrorType CalculateTauMeasure(model::PositionListIndex const* x_pli,
                                       model::PositionListIndex const* a_pli,
                                       model::PositionListIndex const* xa_pli);

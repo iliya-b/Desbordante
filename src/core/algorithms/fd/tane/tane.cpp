@@ -36,6 +36,8 @@ config::ErrorType Tane::CalculateFdError(model::PositionListIndex const* lhs_pli
             return 1 - CalculateMuPlusMeasure(lhs_pli, rhs_pli, joint_pli);
         case +AfdErrorMeasure::rho:
             return 1 - CalculateRhoMeasure(lhs_pli, joint_pli);
+        case +AfdErrorMeasure::fi:
+            return 1 - CalculateFIMeasure(lhs_pli, rhs_pli, joint_pli);
         default:
             return CalculateG1Error(lhs_pli, joint_pli, relation_.get()->GetNumTuplePairs());
     }
